@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: neurocare-play
+  profiles:
+    default: local
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:h2:mem:neurocare;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc.time_zone: Asia/Seoul
+  h2:
+    console:
+      enabled: true
+  jackson:
+    time-zone: Asia/Seoul
+server:
+  port: 8080
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://<HOST>:5432/neurocare
+    username: fhc
+    password: fhc
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc.lob.non_contextual_creation: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  jackson:
+    time-zone: Asia/Seoul
+server:
+  port: 8080
