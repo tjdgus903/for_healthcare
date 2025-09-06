@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Sequence Memory | Healthcare</title>
+    <style>
+        :root { --btn-size: 90px; --gap: 10px; }
+        body { font-family: system-ui, sans-serif; max-width: 960px; margin: 24px auto; padding: 0 12px; }
+        h1 { margin: 8px 0 16px; }
+        .card { border:1px solid #ddd; border-radius:12px; padding:16px; margin:12px 0; }
+        .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+        .panel { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+        input, button, select { padding:10px 12px; border:1px solid #bbb; border-radius:10px; font-size:16px; }
+        button { cursor:pointer; }
+        .grid { display:grid; grid-template-columns: repeat(4, minmax(80px, 1fr)); gap: var(--gap); margin-top: 12px; }
+        .symbol-btn {
+          height: var(--btn-size);
+          border-radius: 16px;
+          display:flex; align-items:center; justify-content:center;
+          font-weight: 700; font-size: 18px; color: #111; border:2px solid #222;
+          touch-action: manipulation; background:#f5f5f5;
+        }
+        .big .symbol-btn { height: calc(var(--btn-size) * 1.4); font-size: 22px; }
+        .highlight { background: #ffeb99 !important; transition: background 120ms; }
+        .badge { background:#efefef; padding:6px 10px; border-radius:999px; }
+        .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0; }
+    </style>
+    <script defer src="/games/common.js"></script>
+</head>
+<body>
+<h1>🧠 Sequence Memory</h1>
+
+<div class="card" aria-labelledby="loginTitle">
+    <h3 id="loginTitle">1) 로그인</h3>
+    <div class="row">
+        <label>아이디 <input id="id" value="fhc"/></label>
+        <label>비밀번호 <input id="pw" value="fhc" type="password"/></label>
+        <button id="btnLogin">로그인</button>
+        <span id="loginStatus" class="badge" aria-live="polite"></span>
+    </div>
+</div>
+
+<a href="/games/sequence-memory.html"><button>🧠 Sequence Memory</button></a>
+
+<div class="card" aria-labelledby="optTitle">
+    <h3 id="optTitle">2) 옵션</h3>
+    <div class="panel">
+        <label>라운드 수
+            <select id="optRounds">
+                <option value="6" selected>6</option>
+                <option value="8">8</option>
+                <option value="10">10</option>
+            </select>
+        </label>
+        <label>심볼 셋
+            <select id="optSymbolSet">
+                <option value="RGYB" selected>R G Y B</option>
+                <option value="RGYBOP">R G Y B O P</option>
+            </select>
+        </label>
+        <label>보여주기 속도(ms)
+            <select id="optShowMs">
+                <option value="900">900</option>
+                <option value="800" selected>800</option>
+                <option value="700">700</option>
+            </select>
+        </label>
+        <label>입력 제한(ms)
+            <select id="optTimeout">
+                <option value="6000" selected>6000</option>
+                <option value="5000">5000</option>
+                <option value="4000">4000</option>
+            </select>
+        </label>
+        <label><input type="checkbox" id="optBig"/> 큰 버튼</label>
+    </div>
+</div>
+
+<div class="card" aria-labelledby="playTitle">
+    <h3 id="playTitle">3) 플레이</h3>
+    <div class="panel">
+        <button id="btnStart">시작</button>
+        <div class="badge">라운드: <span id="round">-</span></div>
+        <div class="badge">성공: <span id="succ">0</span></div>
+        <div class="badge">실패: <span id="fail">0</span></div>
+        <div class="badge">평균 입력(ms): <span id="avgMs">-</span></div>
+    </div>
+
+    <div class="grid" style="margin-top:12px;">
+        <!-- 심볼 6개까지 대비, 기본 4개 -->
+        <button class="symbol-btn" data-sym="R" aria-label="R">R</button>
+        <button class="symbol-btn" data-sym="G" aria-label="G">G</button>
+        <button class="symbol-btn" data-sym="Y" aria-label="Y">Y</button>
+        <button class="symbol-btn" data-sym="B" aria-label="B">B</button>
+        <button class="symbol-btn" data-sym="O" aria-label="O" style="display:none;">O</button>
+        <button class="symbol-btn" data-sym="P" aria-label="P" style="display:none;">P</button>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+        <button id="btnEnd" disabled>강제 종료/기록</button>
+        <span id="status" class="badge" aria-live="polite"></span>
+    </div>
+</div>
+
+<script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const symButtons = [...document.querySelectorAll('.symbol-btn')];
+
+      let sessionId = null;
+      let totalRounds = 6;
+      let symbolSet = ['R','G','Y','B'];
+      let roundIndex = 0;
+      let showing = false; // 보여주기 단계인지
+      let taking = false;  // 입력 단계인지
+      let expect = [];     // 현재 라운드 정답 시퀀스
+      let attempt = [];    // 사용자가 누른 시퀀스
+      let succ = 0, fail = 0;
+      let inputTimes = []; // 라운드 입력 시간(ms)
+      let startedInputAt = 0;
+
+      // 옵션 반영
+      $('optBig').addEventListener('change', e => {
+        document.body.classList.toggle('big', e.target.checked);
+      });
+      $('optSymbolSet').addEventListener('change', e => {
+        const val = e.target.value;
+        symbolSet = (val === 'RGYB') ? ['R','G','Y','B'] : ['R','G','Y','B','O','P'];
+        // 버튼 표시/숨김
+        symButtons.forEach(btn => {
+          const s = btn.getAttribute('data-sym');
+          btn.style.display = symbolSet.includes(s) ? '' : 'none';
+        });
+      });
+
+      function reset() {
+        sessionId = null;
+        roundIndex = 0;
+        succ = 0; fail = 0; inputTimes = [];
+        expect = []; attempt = [];
+        showing = false; taking = false;
+        $('round').textContent = '-';
+        $('succ').textContent = '0';
+        $('fail').textContent = '0';
+        $('avgMs').textContent = '-';
+        $('status').textContent = '';
+        $('btnEnd').disabled = true;
+      }
+
+      function setStats() {
+        $('succ').textContent = String(succ);
+        $('fail').textContent = String(fail);
+        const avg = inputTimes.length ? Math.round(inputTimes.reduce((a,b)=>a+b,0)/inputTimes.length) : '-';
+        $('avgMs').textContent = String(avg);
+      }
+
+      // 로그인
+      $('btnLogin').addEventListener('click', async () => {
+        try {
+          await API.login($('id').value, $('pw').value);
+          $('loginStatus').textContent = '로그인 성공';
+        } catch (e) {
+          $('loginStatus').textContent = '로그인 실패';
+        }
+      });
+
+      // 시작
+      $('btnStart').addEventListener('click', async () => {
+        if (!API.getToken()) { alert('먼저 로그인하세요.'); return; }
+        try {
+          reset();
+          totalRounds = parseInt($('optRounds').value, 10);
+          const showMs = parseInt($('optShowMs').value, 10);
+          const inputTimeoutMs = parseInt($('optTimeout').value, 10);
+          // symbolSet은 셀렉트 핸들러로 이미 반영됨
+
+          const res = await API.request('/sequence/start', {
+            method: 'POST',
+            body: {
+              totalRounds, symbolSet, showMs, inputTimeoutMs
+            }
+          });
+
+          sessionId = res.sessionId;
+          $('btnEnd').disabled = false;
+          roundIndex = res.roundIndex;
+          $('round').textContent = `${roundIndex}/${totalRounds}`;
+          expect = res.pattern;
+          await playShowPhase(expect, showMs);
+          startInputPhase();
+        } catch (e) {
+          alert('시작 실패: ' + e.message);
+        }
+      });
+
+      // 강제 종료
+      $('btnEnd').addEventListener('click', async () => {
+        if (sessionId) await finalize();
+      });
+
+      // 입력 버튼
+      symButtons.forEach(btn => {
+        btn.addEventListener('pointerdown', onTap, {passive:true});
+        btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') onTap(e); });
+      });
+
+      function onTap(e) {
+        if (!taking) return;
+        const sym = e.currentTarget.getAttribute('data-sym');
+        attempt.push(sym);
+        // 모든 입력 완료 시 판정
+        if (attempt.length >= expect.length) {
+          taking = false;
+          const reactionMs = Math.round(performance.now() - startedInputAt);
+          inputTimes.push(reactionMs);
+          judgeRound(reactionMs);
+        }
+      }
+
+      async function playShowPhase(seq, showMs) {
+        showing = true;
+        // 하이라이트 표시(한 개씩)
+        for (let i=0; i<seq.length; i++) {
+          const s = seq[i];
+          const btn = symButtons.find(b => b.getAttribute('data-sym') === s);
+          if (!btn) continue;
+          btn.classList.add('highlight');
+          await wait(showMs);
+          btn.classList.remove('highlight');
+          await wait(200);
+        }
+        showing = false;
+      }
+
+      function startInputPhase() {
+        attempt = [];
+        startedInputAt = performance.now();
+        taking = true;
+        $('status').textContent = `입력 대기: ${expect.length}개`;
+      }
+
+      async function judgeRound(reactionMs) {
+        try {
+          const r = await API.request(`/sequence/${sessionId}/submit`, {
+            method: 'POST',
+            body: { roundIndex, attempt, reactionMs }
+          });
+          if (r.correct) succ++; else fail++;
+          setStats();
+
+          if (r.finished) {
+            await finalize();
+          } else {
+            // 다음 라운드
+            roundIndex = r.nextRound;
+            $('round').textContent = `${roundIndex}/${totalRounds}`;
+            const patt = await API.request(`/sequence/${sessionId}/pattern?roundIndex=${roundIndex}`);
+            expect = patt.pattern;
+            const showMs = parseInt($('optShowMs').value, 10);
+            await playShowPhase(expect, showMs);
+            startInputPhase();
+          }
+        } catch (e) {
+          $('status').textContent = '판정 실패: ' + e.message;
+        }
+      }
+
+      async function finalize() {
+        const avg = inputTimes.length ? Math.round(inputTimes.reduce((a,b)=>a+b,0)/inputTimes.length) : null;
+        // maxLevel: 성공한 라운드 수 (간단 계산)
+        const maxLevel = succ;
+        try {
+          const res = await API.request(`/sequence/${sessionId}/end`, {
+            method: 'POST',
+            body: {
+              maxLevel, totalRounds, successCount: succ, failCount: fail, avgInputMs: avg
+            }
+          });
+          $('status').textContent = `기록 저장: 점수 ${res.score}, 정확도 ${Math.round((res.accuracy ?? 0)*100)}%`;
+        } catch (e) {
+          $('status').textContent = '기록 실패: ' + e.message;
+        } finally {
+          taking = false; showing = false;
+          $('btnEnd').disabled = true;
+        }
+      }
+
+      function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+    })();
+</script>
+</body>
+</html>
