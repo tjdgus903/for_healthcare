@@ -29,6 +29,11 @@ dependencies {
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.jetbrains.kotlin:kotlin-reflect'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+    implementation('org.jfree:jfreechart:1.5.4') {
+        exclude group: 'org.jogamp.jogl', module: 'jogl-all'
+        exclude group: 'org.jogamp.gluegen', module: 'gluegen-rt'
+    }
+
 
     runtimeOnly 'org.postgresql:postgresql'
     runtimeOnly 'com.h2database:h2'
