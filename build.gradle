@@ -43,3 +43,11 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+springBoot {
+    mainClass = 'com.healthcare.play.HealthcareApplicationKt'
+}
+
+tasks.named('bootRun') {
+    mainClass.set('com.healthcare.play.HealthcareApplicationKt')
+}

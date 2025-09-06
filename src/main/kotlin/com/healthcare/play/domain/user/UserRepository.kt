@@ -1,5 +1,6 @@
-package org.example.com.healthcare.play.domain.user
+package com.healthcare.play.domain.user.UserRepository
 
+import com.healthcare.play.domain.user.User
 import org.springframework.data.jpa.repository.JpaRepository
 import java.util.Optional
 import java.util.UUID

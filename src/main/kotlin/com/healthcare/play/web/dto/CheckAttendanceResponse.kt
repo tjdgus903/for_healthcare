@@ -1,4 +1,4 @@
-package org.example.com.healthcare.play.web.dto
+package com.healthcare.play.web.dto
 
 import java.time.LocalDate
 

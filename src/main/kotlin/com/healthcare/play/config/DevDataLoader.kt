@@ -1,8 +1,8 @@
 package com.healthcare.play.config
 
-import org.example.com.healthcare.play.domain.user.User
-import org.example.com.healthcare.play.domain.user.UserRepository
-import org.example.com.healthcare.play.domain.user.UserRole
+import com.healthcare.play.domain.user.User
+import com.healthcare.play.domain.user.UserRepository.UserRepository
+import com.healthcare.play.domain.user.UserRole
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Profile
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -23,6 +23,17 @@ class DevDataLoader(
             )
             userRepository.save(demo)
             println("▶ Demo user created: id=${demo.id}, email=${demo.email}")
+        }
+
+        if (userRepository.findByEmail("fhc2").isEmpty) {
+            userRepository.save(
+                User(
+                    email = "fhc2",
+                    passwordHash = passwordEncoder.encode("fhc2"),
+                    role = UserRole.PLAYER
+                )
+            )
+            println("▶ Demo user created: fhc2/fhc2")
         }
     }
 }

@@ -1,7 +1,7 @@
-package org.example.com.healthcare.play.domain.user.attendance
+package com.healthcare.play.domain.user.attendance
 
+import com.healthcare.play.domain.user.User
 import jakarta.persistence.*
-import org.example.com.healthcare.play.domain.user.User
 import org.hibernate.annotations.UuidGenerator
 import java.time.LocalDate
 import java.util.UUID

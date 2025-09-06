@@ -1,4 +1,4 @@
-package org.example.com.healthcare.play.domain.user
+package com.healthcare.play.domain.user
 
 import jakarta.persistence.*
 import jakarta.validation.constraints.Email

@@ -1,4 +1,4 @@
-package org.example.com.healthcare.play.domain.user.attendance
+package com.healthcare.play.domain.user.attendance
 
 import org.springframework.data.jpa.repository.JpaRepository
 import java.time.LocalDate

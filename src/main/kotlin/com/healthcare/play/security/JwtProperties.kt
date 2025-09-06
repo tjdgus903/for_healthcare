@@ -1,9 +1,10 @@
 package com.healthcare.play.security
 
-import org.apache.el.parser.AstMinus
-import org.springframework.boot.context.properties.bind.ConstructorBinding
+import org.springframework.boot.context.properties.ConfigurationProperties
 
-data class JwtProperties @ConstructorBinding constructor(
+// application.yml의 jwt.* 값을 바인딩
+@ConfigurationProperties(prefix = "jwt")
+data class JwtProperties(
     val secret: String,
     val issuer: String,
     val accessTokenMinutes: Long

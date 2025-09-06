@@ -13,34 +13,37 @@ import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 @Configuration
-@EnableConfigurationProperties(JwtProperties::class)
+@EnableConfigurationProperties(JwtProperties::class) // 또는 메인에 @ConfigurationPropertiesScan
 class SecurityConfig(
     private val jwtAuthFilter: JwtAuthFilter
 ) {
+
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            // REST API 스타일: 세션은 사용하지 않음
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .csrf { it.disable() }
             .cors(withDefaults())
 
-            // URL 접근 권한
             .authorizeHttpRequests { auth ->
                 auth
-                    .requestMatchers("/auth/**").permitAll()
-                    .requestMatchers(
+                    // 정적 리소스 & 루트 허용 (index.html 볼 수 있게!)
+                    .requestMatchers("/", "/index.html", "/favicon.ico",
+                        "/assets/**", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                    // 공개 엔드포인트
+                    .requestMatchers("/auth/**",
                         "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
-                        "/h2-console/**"
-                    ).permitAll()
-                    .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+                        "/h2-console/**",
+                        "/actuator/health").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/").permitAll()
+                    // 그 외는 인증 필요
                     .anyRequest().authenticated()
             }
 
-            // H2 콘솔 프레임 허용 (로컬 용)
+            // H2 콘솔 프레임 허용(로컬)
             .headers { it.frameOptions { fo -> fo.disable() } }
 
-            // UsernamePasswordAuthenticationFilter 앞에 JWT 필터 삽입
+            // JWT 필터 삽입
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()

@@ -1,9 +1,9 @@
-package org.example.com.healthcare.play.service
+package com.healthcare.play.service
 
-import org.example.com.healthcare.play.domain.user.UserRepository
-import org.example.com.healthcare.play.domain.user.attendance.Attendance
-import org.example.com.healthcare.play.domain.user.attendance.AttendanceRepository
-import org.example.com.healthcare.play.domain.user.attendance.AttendanceStatus
+import com.healthcare.play.domain.user.UserRepository.UserRepository
+import com.healthcare.play.domain.user.attendance.Attendance
+import com.healthcare.play.domain.user.attendance.AttendanceRepository
+import com.healthcare.play.domain.user.attendance.AttendanceStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate

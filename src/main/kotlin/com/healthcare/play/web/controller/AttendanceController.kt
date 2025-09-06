@@ -1,9 +1,9 @@
-package org.example.com.healthcare.play.web.controller
+package com.healthcare.play.web.controller
 
 import com.healthcare.play.security.AuthPrincipal
-import org.example.com.healthcare.play.service.AttendanceService
-import org.example.com.healthcare.play.web.dto.CalendarDayResponse
-import org.example.com.healthcare.play.web.dto.CheckAttendanceResponse
+import com.healthcare.play.service.AttendanceService
+import com.healthcare.play.web.dto.CalendarDayResponse
+import com.healthcare.play.web.dto.CheckAttendanceResponse
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
