@@ -4,7 +4,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.healthcare.play.domain.game.GameType
 import com.healthcare.play.domain.game.SessionMetricRepository
 import com.healthcare.play.domain.game.GameSessionRepository
-import com.healthcare.play.service.sequence.SequenceGenerator
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.OffsetDateTime
