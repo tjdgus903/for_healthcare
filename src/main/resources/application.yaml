@@ -1,8 +1,23 @@
 spring:
   application:
-    name: neurocare-play
+    name: healthcare-play
   profiles:
     default: local
+
+---
+
+spring:
+  security:
+    filter:
+      dispatcher-types: REQUEST
+
+---
+
+# JWT 설정 (로컬 예시 값 — 운영에서는 환경변수/Secret Manager로 주입!)
+jwt:
+  secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_32B_MIN"
+  issuer: "healthcare-app"
+  access-token-minutes: 60     # 액세스 토큰 유효기간(분)
 
 ---
 spring:
