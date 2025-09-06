@@ -30,7 +30,7 @@ class SecurityConfig(
                     // 정적 리소스 & 루트 허용 (index.html 볼 수 있게!)
                     .requestMatchers("/", "/index.html", "/favicon.ico",
                         "/assets/**", "/css/**", "/js/**", "/images/**", "/webjars/**",
-                        "/ping").permitAll()
+                        "/ping", "/games/**").permitAll()
                     // 공개 엔드포인트
                     .requestMatchers("/auth/**",
                         "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",

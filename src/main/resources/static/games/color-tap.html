@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Color Tap | Healthcare</title>
+    <link rel="preconnect" href="/">
+    <style>
+        :root {
+          --btn-size: 120px;       /* 큰 버튼 기본 크기 */
+          --gap: 12px;
+        }
+        body { font-family: system-ui, sans-serif; max-width: 960px; margin: 24px auto; padding: 0 12px; }
+        h1 { margin: 8px 0 16px; }
+        .card { border:1px solid #ddd; border-radius:12px; padding:16px; margin:12px 0; }
+        .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+        input, button, select { padding:10px 12px; border:1px solid #bbb; border-radius:10px; font-size:16px; }
+        button { cursor:pointer; }
+        .grid { display:grid; grid-template-columns: repeat(2, minmax(120px, 1fr)); gap: var(--gap); margin-top: 12px; }
+        .color-btn {
+          height: var(--btn-size);
+          border-radius: 16px;
+          display:flex; align-items:center; justify-content:center;
+          font-weight: 700; color: #111; border:2px solid #222;
+          touch-action: manipulation;
+        }
+        .panel { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+        .badge { background:#efefef; padding:6px 10px; border-radius:999px; }
+        .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+        .contrast .color-btn { border-color:#000; }
+        .contrast #targetSwatch { box-shadow: 0 0 0 4px #000 inset; }
+        .big .color-btn { height: calc(var(--btn-size) * 1.4); font-size: 20px; }
+    </style>
+    <script defer src="/games/common.js"></script>
+</head>
+<body>
+<h1>🎯 Color Tap</h1>
+
+<div class="card" aria-labelledby="loginTitle">
+    <h3 id="loginTitle">1) 로그인</h3>
+    <div class="row">
+        <label>아이디 <input id="id" value="fhc"/></label>
+        <label>비밀번호 <input id="pw" value="fhc" type="password"/></label>
+        <button id="btnLogin">로그인</button>
+        <span id="loginStatus" class="badge" aria-live="polite"></span>
+    </div>
+</div>
+
+<div class="card" aria-labelledby="optTitle">
+    <h3 id="optTitle">2) 접근성 & 게임 옵션</h3>
+    <div class="panel">
+        <label><input type="checkbox" id="optContrast"/> 고대비</label>
+        <label><input type="checkbox" id="optBig"/> 큰 버튼</label>
+        <label>떨림 보정(디바운스 ms)
+            <select id="optDebounce">
+                <option value="0">꺼짐</option>
+                <option value="120" selected>120</option>
+                <option value="180">180</option>
+                <option value="240">240</option>
+            </select>
+        </label>
+        <label>라운드 수
+            <select id="optRounds">
+                <option value="10" selected>10</option>
+                <option value="6">6</option>
+                <option value="15">15</option>
+            </select>
+        </label>
+    </div>
+</div>
+
+<div class="card" aria-labelledby="playTitle">
+    <h3 id="playTitle">3) 플레이</h3>
+    <div class="panel">
+        <button id="btnStart">게임 시작</button>
+        <div class="badge">진행: <span id="progress">0</span></div>
+        <div class="badge">정답: <span id="correct">0</span></div>
+        <div class="badge">오답: <span id="wrong">0</span></div>
+        <div class="badge">평균반응(ms): <span id="avgMs">-</span></div>
+    </div>
+
+    <div style="margin-top:12px;">
+        <span class="sr-only" id="targetLabel">목표 색상</span>
+        <div id="targetSwatch" role="img" aria-labelledby="targetLabel"
+             style="width:100%; height:60px; border-radius:12px; border:2px solid #222; background:#eee;"></div>
+    </div>
+
+    <div class="grid" style="margin-top:12px;">
+        <!-- 4색 버튼 -->
+        <button class="color-btn" data-color="#E74C3C" aria-label="붉은색 버튼"   style="background:#E74C3C;"></button>
+        <button class="color-btn" data-color="#2ECC71" aria-label="녹색 버튼"     style="background:#2ECC71;"></button>
+        <button class="color-btn" data-color="#3498DB" aria-label="파란색 버튼"   style="background:#3498DB;"></button>
+        <button class="color-btn" data-color="#F1C40F" aria-label="노란색 버튼"   style="background:#F1C40F;"></button>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+        <button id="btnEnd" disabled>강제 종료/기록</button>
+        <span id="gameStatus" class="badge" aria-live="polite"></span>
+    </div>
+</div>
+
+<script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const target = $('targetSwatch');
+      const progress = $('progress'), correct = $('correct'), wrong = $('wrong'), avgMs = $('avgMs');
+      const status = $('gameStatus');
+
+      const COLORS = ['#E74C3C','#2ECC71','#3498DB','#F1C40F']; // 적, 녹, 청, 황
+      let sessionId = null;
+      let startedAt = null;
+      let round = 0, maxRounds = 10;
+      let correctCnt = 0, wrongCnt = 0;
+      let reactionSum = 0, reactions = [];
+      let currentTarget = null;
+      let debounceMs = 120;
+      let lastTapAt = 0;
+      let running = false;
+
+      // 접근성 옵션
+      const root = document.documentElement;
+      $('optContrast').addEventListener('change', e => {
+        document.body.classList.toggle('contrast', e.target.checked);
+      });
+      $('optBig').addEventListener('change', e => {
+        document.body.classList.toggle('big', e.target.checked);
+      });
+      $('optDebounce').addEventListener('change', e => {
+        debounceMs = parseInt(e.target.value, 10) || 0;
+      });
+      $('optRounds').addEventListener('change', e => {
+        maxRounds = parseInt(e.target.value, 10) || 10;
+      });
+
+      // 로그인
+      $('btnLogin').addEventListener('click', async () => {
+        try {
+          const data = await API.login($('id').value, $('pw').value);
+          $('loginStatus').textContent = '로그인 성공';
+        } catch (e) {
+          $('loginStatus').textContent = '로그인 실패';
+        }
+      });
+
+      // 게임 시작
+      $('btnStart').addEventListener('click', async () => {
+        if (!API.getToken()) { alert('먼저 로그인하세요.'); return; }
+        try {
+          resetState();
+          const meta = {
+            contrast: $('optContrast').checked,
+            bigButtons: $('optBig').checked,
+            debounceMs: debounceMs,
+            rounds: maxRounds
+          };
+          const res = await API.startSession('COLOR_TAP', meta);
+          sessionId = res.sessionId;
+          $('btnEnd').disabled = false;
+          running = true;
+          nextRound();
+        } catch (e) {
+          alert('세션 시작 실패: ' + e.message);
+        }
+      });
+
+      // 강제 종료
+      $('btnEnd').addEventListener('click', async () => {
+        if (sessionId) await endAndReport();
+      });
+
+      // 버튼 탭 핸들러
+      [...document.querySelectorAll('.color-btn')].forEach(btn => {
+        btn.addEventListener('pointerdown', onTap, {passive:true});
+        btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') onTap(e); });
+      });
+
+      function onTap(e) {
+        if (!running) return;
+        const now = performance.now();
+        if (debounceMs > 0 && now - lastTapAt < debounceMs) return; // 떨림 보정
+        lastTapAt = now;
+
+        const chosen = e.currentTarget.getAttribute('data-color');
+        const rt = performance.now() - startedAt; // reaction time
+        const hit = (chosen === currentTarget);
+        reactions.push(rt);
+        reactionSum += rt;
+        if (hit) { correctCnt++; } else { wrongCnt++; }
+        setStats();
+
+        // 라운드 진행
+        if (round >= maxRounds) {
+          endAndReport();
+        } else {
+          nextRound();
+        }
+      }
+
+      function nextRound() {
+        round++;
+        progress.textContent = `${round}/${maxRounds}`;
+        // 새 타겟 고르기
+        currentTarget = COLORS[Math.floor(Math.random()*COLORS.length)];
+        target.style.background = currentTarget;
+        target.setAttribute('aria-label', '목표 색상 ' + currentTarget);
+        // 반응 타이머 시작
+        startedAt = performance.now();
+      }
+
+      async function endAndReport() {
+        running = false;
+        $('btnEnd').disabled = true;
+        const avg = reactions.length ? Math.round(reactionSum / reactions.length) : null;
+        const accuracy = (correctCnt + wrongCnt) ? (correctCnt / (correctCnt + wrongCnt)) : null;
+
+        try {
+          // 지표 전송(원하면 라운드별 상세를 extra로 보낼 수 있음)
+          await API.addMetrics(sessionId, [
+            { key: 'taps', value: correctCnt + wrongCnt, unit: 'count' },
+            { key: 'correct', value: correctCnt, unit: 'count' },
+            { key: 'mistake', value: wrongCnt, unit: 'count' },
+            { key: 'avgReactionMs', value: avg ?? 0, unit: 'ms' }
+          ]);
+
+          const endRes = await API.endSession(sessionId, {
+            score: correctCnt * 10,               // 간단 점수 규칙(정답×10)
+            accuracy: accuracy,                   // 0.0~1.0
+            durationSec: null,                    // 서버가 자동 계산하도록 null
+            meta: { lastAvgReactionMs: avg }
+          });
+          status.textContent = `기록 저장: 점수 ${endRes.score}, 정확도 ${(endRes.accuracy ?? 0)*100|0}%`;
+        } catch (e) {
+          status.textContent = '기록 실패: ' + e.message;
+        }
+      }
+
+      function resetState() {
+        sessionId = null;
+        round = 0; correctCnt = 0; wrongCnt = 0;
+        reactionSum = 0; reactions = [];
+        progress.textContent = '0';
+        correct.textContent = '0';
+        wrong.textContent = '0';
+        avgMs.textContent = '-';
+        status.textContent = '';
+        lastTapAt = 0;
+      }
+
+      function setStats() {
+        correct.textContent = String(correctCnt);
+        wrong.textContent = String(wrongCnt);
+        const avg = reactions.length ? Math.round(reactionSum / reactions.length) : '-';
+        avgMs.textContent = String(avg);
+      }
+    })();
+</script>
+</body>
+</html>
