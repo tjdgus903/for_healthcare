@@ -1,4 +1,4 @@
-package com.healthcare.play.domain.user.UserRepository
+package com.healthcare.play.domain.user
 
 import com.healthcare.play.domain.user.User
 import org.springframework.data.jpa.repository.JpaRepository

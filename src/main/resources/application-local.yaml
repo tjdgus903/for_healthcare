@@ -6,3 +6,7 @@ ads:
   cooldownSeconds: 60
   allowedRewardTypes: [HINT, EXTRA_TIME]
   devMode: true
+
+billing:
+  dev-accept: true        # 개발 단계: 서버에서 영수증을 신뢰하고 30일 구독 처리
+  default-days: 30
