@@ -1,5 +1,6 @@
 package com.healthcare.play.orgs
 
+import com.healthcare.play.domain.user.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
@@ -8,6 +9,7 @@ data class CreateOrgReq(val name: String)
 data class AddMemberReq(val userId: UUID, val role: OrgRole = OrgRole.VIEWER)
 data class CreateCohortReq(val name: String)
 data class AddCohortMemberReq(val userId: UUID)
+data class AddMemberByEmailReq(val email: String, val role: OrgRole = OrgRole.VIEWER)
 
 @Service
 class OrgService(
@@ -15,7 +17,8 @@ class OrgService(
     private val memberRepo: OrganizationMemberRepository,
     private val cohortRepo: CohortRepository,
     private val cohortMemberRepo: CohortMemberRepository,
-    private val acl: OrgAcl
+    private val acl: OrgAcl,
+    private val userRepo: UserRepository
 ) {
     @Transactional
     fun createOrg(ownerUserId: UUID, req: CreateOrgReq): UUID {
@@ -54,5 +57,14 @@ class OrgService(
     fun cohorts(orgId: UUID, actorUserId: UUID) : List<Cohort> {
         acl.requireMember(orgId, actorUserId)
         return cohortRepo.findByOrganization_Id(orgId)
+    }
+
+    @Transactional
+    fun addMemberByEmail(orgId: UUID, actorUserId: UUID, req: AddMemberByEmailReq) {
+        val org = acl.requireAdmin(orgId, actorUserId)
+        val user = userRepo.findByEmail(req.email).orElseThrow()   // 존재하는 유저 전제
+        if (memberRepo.findByOrganization_IdAndUserId(org.id!!, user.id!!).isEmpty) {
+            memberRepo.save(OrganizationMember(organization = org, userId = user.id!!, role = req.role))
+        }
     }
 }

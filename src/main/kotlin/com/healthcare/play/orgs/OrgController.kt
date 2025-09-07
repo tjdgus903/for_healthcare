@@ -57,4 +57,14 @@ class OrgController(
         svc.addCohortMember(orgId, cohortId, p.userId, req)
         return ResponseEntity.ok().build()
     }
+
+    @PostMapping("/{orgId}/members/by-email")
+    fun addMemberByEmail(
+        @AuthenticationPrincipal p: AuthPrincipal,
+        @PathVariable orgId: UUID,
+        @RequestBody req: AddMemberByEmailReq
+    ): ResponseEntity<Void> {
+        svc.addMemberByEmail(orgId, p.userId, req)
+        return ResponseEntity.ok().build()
+    }
 }

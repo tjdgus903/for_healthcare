@@ -49,4 +49,20 @@ class OrgReportController(
             .contentType(MediaType("text","csv"))
             .body(bytes)
     }
+
+    @GetMapping("/{orgId}/reports/export.pdf")
+    fun exportPdf(
+        @AuthenticationPrincipal p: AuthPrincipal,
+        @PathVariable orgId: UUID,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) from: Instant,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) to: Instant,
+        @RequestParam(required=false) cohortId: UUID?
+    ): ResponseEntity<ByteArray> {
+        val data = svc.summaryByGame(orgId, p.userId, from, to, cohortId)
+        val bytes = ReportPdf.renderSummary(data)
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"org-${orgId}-summary.pdf\"")
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(bytes)
+    }
 }
