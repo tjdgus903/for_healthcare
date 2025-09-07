@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Ads & Rewards Test</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 960px; margin: 24px auto; padding: 0 12px; }
+        h1 { margin-bottom: 12px; }
+        .card { border:1px solid #ddd; border-radius:12px; padding:16px; margin:12px 0; }
+        .row, .panel { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+        input, button, select { padding:10px 12px; border:1px solid #bbb; border-radius:10px; font-size:16px; }
+        pre { background:#fafafa; border:1px solid #eee; padding:10px; border-radius:8px; overflow:auto; }
+        .badge { background:#efefef; padding:6px 10px; border-radius:999px; }
+    </style>
+    <script defer src="/games/common.js"></script>
+</head>
+<body>
+<h1>💰 Ads & Rewards Test</h1>
+
+<!-- 로그인 -->
+<div class="card">
+    <h3>1) 로그인</h3>
+    <div class="row">
+        <label>아이디 <input id="id" value="fhc"/></label>
+        <label>비밀번호 <input id="pw" value="fhc" type="password"/></label>
+        <button id="btnLogin">로그인</button>
+        <button id="btnLogout">로그아웃</button>
+        <span id="loginStatus" class="badge"></span>
+    </div>
+</div>
+
+<!-- 정책 조회 -->
+<div class="card">
+    <h3>2) 광고 정책 조회</h3>
+    <div class="panel">
+        <button id="btnConfig">/ads/config 조회</button>
+        <span class="badge">오늘 수령: <span id="todayEarned">-</span></span>
+        <span class="badge">잔여: <span id="todayRemain">-</span></span>
+        <span class="badge">구독자: <span id="subscribed">-</span></span>
+    </div>
+    <pre id="configDump">{}</pre>
+</div>
+
+<!-- 보상 수령 (모의 광고 시청 완료) -->
+<div class="card">
+    <h3>3) 보상 수령 (Mock)</h3>
+    <div class="row">
+        <label>보상 타입
+            <select id="rewardType">
+                <option value="HINT">HINT</option>
+                <option value="EXTRA_TIME">EXTRA_TIME</option>
+            </select>
+        </label>
+        <label>수량 <input id="amount" type="number" value="1" min="1" style="width:80px"/></label>
+        <button id="btnClaim">/ads/rewards/claim</button>
+        <span id="claimMsg" class="badge"></span>
+    </div>
+    <pre id="claimDump">{}</pre>
+</div>
+
+<!-- 인벤토리 -->
+<div class="card">
+    <h3>4) 내 인벤토리</h3>
+    <div class="panel">
+        <button id="btnInv">/ads/inventory/me</button>
+        <span class="badge">HINT: <span id="hintBal">-</span></span>
+        <span class="badge">EXTRA_TIME: <span id="extraBal">-</span></span>
+    </div>
+    <pre id="invDump">{}</pre>
+</div>
+
+<script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      function dump(el, obj){ el.textContent = JSON.stringify(obj, null, 2); }
+
+      $('btnLogin').addEventListener('click', async () => {
+        try {
+          await API.login($('id').value, $('pw').value);
+          $('loginStatus').textContent = '로그인 성공';
+        } catch (e) {
+          $('loginStatus').textContent = '로그인 실패';
+        }
+      });
+
+      $('btnLogout').addEventListener('click', () => {
+        API.clearToken();
+        $('loginStatus').textContent = '로그아웃';
+      });
+
+      $('btnConfig').addEventListener('click', async () => {
+        try {
+          const cfg = await API.getAdsConfig();
+          dump($('configDump'), cfg);
+          $('todayEarned').textContent = String(cfg.todayEarned);
+          $('todayRemain').textContent = String(cfg.todayRemain);
+          $('subscribed').textContent = cfg.subscribed ? '예' : '아니오';
+        } catch (e) {
+          dump($('configDump'), { error: e.message });
+        }
+      });
+
+      $('btnClaim').addEventListener('click', async () => {
+        try {
+          const rewardType = $('rewardType').value;
+          const amount = parseInt($('amount').value, 10) || 1;
+          const r = await API.claimReward({ rewardType, amount });
+          dump($('claimDump'), r);
+          $('claimMsg').textContent = r.message || 'OK';
+        } catch (e) {
+          $('claimMsg').textContent = '실패';
+          dump($('claimDump'), { error: e.message });
+        }
+      });
+
+      $('btnInv').addEventListener('click', async () => {
+        try {
+          const inv = await API.getMyInventory();
+          dump($('invDump'), inv);
+          $('hintBal').textContent = String(inv.hintTokens ?? 0);
+          $('extraBal').textContent = String(inv.extraTimeTokens ?? 0);
+        } catch (e) {
+          dump($('invDump'), { error: e.message });
+        }
+      });
+    })();
+</script>
+</body>
+</html>

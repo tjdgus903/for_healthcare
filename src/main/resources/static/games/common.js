@@ -40,3 +40,21 @@ const API = (() => {
 
   return { login, startSession, addMetrics, endSession, getToken, clearToken, request };
 })();
+
+// === Ads helpers ===
+API.getAdsConfig = async function() {
+  return await API.request('/ads/config', { method: 'GET' });
+};
+
+API.claimReward = async function({ adNetwork='admob', rewardType='HINT', amount=1, sessionId=null }) {
+  // adEventId는 매번 바꿔줘야 중복 방지됨
+  const adEventId = 'evt_' + Math.random().toString(36).slice(2) + Date.now();
+  return await API.request('/ads/rewards/claim', {
+    method: 'POST',
+    body: { adNetwork, adEventId, rewardType, amount, sessionId }
+  });
+};
+
+API.getMyInventory = async function() {
+  return await API.request('/ads/inventory/me', { method: 'GET' });
+};
