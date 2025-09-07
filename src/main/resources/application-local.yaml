@@ -1,0 +1,8 @@
+ads:
+  enabled: true
+  allowPostSessionAd: true
+  allowRewarded: true
+  dailyRewardCap: 5
+  cooldownSeconds: 60
+  allowedRewardTypes: [HINT, EXTRA_TIME]
+  devMode: true
