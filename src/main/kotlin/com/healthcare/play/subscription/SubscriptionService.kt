@@ -2,6 +2,8 @@ package com.healthcare.play.subscription
 
 import com.healthcare.play.domain.user.UserRepository
 import com.healthcare.play.subscription.Subscription
+import com.healthcare.play.subscription.iap.*
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -34,32 +36,34 @@ data class StatusResponse(
 class SubscriptionService(
     private val userRepo: UserRepository,
     private val subRepo: SubscriptionRepository,
-    private val props: BillingProperties
+    private val props: BillingProperties,
+    private val devVerifier: DevIapVerifier,
+    private val gpVerifier: GooglePlayVerifier,
+    private val iosVerifier: AppStoreVerifier
 ) {
 
+
+    @CacheEvict(cacheNames = ["isSubscribed"], key = "#userId")
     @Transactional
     fun verify(userId: UUID, req: VerifyRequest): VerifyResponse {
         val user = userRepo.findById(userId).orElseThrow()
-
-        // 중복/재검증 방지: 같은 purchaseToken이 있으면 갱신만
         val existing = subRepo.findByPurchaseToken(req.purchaseToken).orElse(null)
 
-        val (verifiedStatus, verifiedExpire, note) = if (props.devAccept || (req.devMode == true)) {
-            // 개발용 스텁: now + defaultDays
-            Triple(SubStatus.ACTIVE, Instant.now().plus(props.defaultDays, ChronoUnit.DAYS), "dev-accept")
-        } else {
-            // TODO: 실제 스토어 서버 검증 로직
-            // - ANDROID: Google Play Developer API (Purchases.subscriptions.get)
-            // - IOS: App Store Server API (JWSToken -> verifyTransaction)
-            // 여기서는 실패로 처리 예시
-            Triple(SubStatus.EXPIRED, null, "store-verify-not-implemented")
-        }
+        val verifier = pickVerifier(req.devMode, req.platform)
+        val result = verifier.verify(
+            VerifierInput(
+                platform = req.platform,
+                productId = req.productId,
+                purchaseToken = req.purchaseToken,
+                rawPayload = req.rawPayload
+            )
+        )
 
         val sub = existing?.apply {
             this.platform = req.platform
             this.productId = req.productId
-            this.status = verifiedStatus
-            this.expiresAt = verifiedExpire
+            this.status = result.status
+            this.expiresAt = result.expiresAt
             this.lastVerifiedAt = Instant.now()
             this.rawPayload = req.rawPayload
         } ?: Subscription(
@@ -67,9 +71,9 @@ class SubscriptionService(
             platform = req.platform,
             productId = req.productId,
             purchaseToken = req.purchaseToken,
-            status = verifiedStatus,
+            status = result.status,
             startedAt = Instant.now(),
-            expiresAt = verifiedExpire,
+            expiresAt = result.expiresAt,
             lastVerifiedAt = Instant.now(),
             rawPayload = req.rawPayload
         )
@@ -77,10 +81,10 @@ class SubscriptionService(
         subRepo.save(sub)
 
         return VerifyResponse(
-            ok = (verifiedStatus == SubStatus.ACTIVE),
-            status = verifiedStatus,
-            expiresAt = verifiedExpire,
-            message = note
+            ok = result.ok,
+            status = result.status,
+            expiresAt = result.expiresAt,
+            message = result.note
         )
     }
 
@@ -101,4 +105,14 @@ class SubscriptionService(
     /** M6 등에서 '광고 OFF' 판정에 사용 */
     @Transactional(readOnly = true)
     fun isSubscribed(userId: UUID): Boolean = status(userId).subscribed
+
+
+    private fun pickVerifier(devMode: Boolean?, platform: Platform): IapVerifier {
+        return when {
+            props.devAccept || (devMode == true) -> devVerifier
+            platform == Platform.ANDROID -> gpVerifier
+            platform == Platform.IOS -> iosVerifier
+            else -> devVerifier
+        }
+    }
 }

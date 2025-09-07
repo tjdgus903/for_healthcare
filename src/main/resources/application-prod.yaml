@@ -1,0 +1,11 @@
+play:
+  package-name: com.healthcare.play
+  # service-account-json: file:/etc/secrets/play-service.json
+
+apple:
+  issuer-id: YOUR_ISSUER_ID
+  key-id: YOUR_KEY_ID
+  private-key: |-
+    -----BEGIN PRIVATE KEY-----
+    ...
+    -----END PRIVATE KEY-----
