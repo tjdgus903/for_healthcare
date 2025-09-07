@@ -72,7 +72,8 @@ class GameSessionService(
     @Transactional(readOnly = true)
     fun listMySessions(userId: UUID, type: GameType?): List<GameSession> =
         if (type == null) sessionRepo.findAllByUserIdOrderByStartedAtDesc(userId)
-        else sessionRepo.findAllByUserIdAndGameTypeOrderByStartedAtDesc(userId, type)
+        else sessionRepo.findAllByUser_IdAndGame_TypeOrderByStartedAtDesc(userId, type)
+
 }
 
 /** 클라이언트가 보내는 지표 포맷 */

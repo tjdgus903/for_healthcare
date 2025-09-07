@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Description
 import java.util.*
 
 @Entity
-@Table(name = "game", uniqueConstraints = [UniqueConstraint(columnNames = ["type"])])
+@Table(name = "game")
 class Game (
     @Id @GeneratedValue @UuidGenerator
     var id: UUID? = null,
@@ -30,5 +30,4 @@ class Game (
 
     @Column(nullable = false)
     var active: Boolean = true,
-){
-}
+)
