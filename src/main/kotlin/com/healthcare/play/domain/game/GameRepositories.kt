@@ -37,6 +37,8 @@ interface GameSessionRepository : JpaRepository<GameSession, UUID> {
         @Param("from") from: Instant,
         @Param("to") to: Instant
     ): List<OrgSummaryRow>
+
+    fun findAllByUser_IdOrderByStartedAtDesc(userId: UUID): List<GameSession>
 }
 
 interface SessionMetricRepository : JpaRepository<SessionMetric, UUID> {

@@ -1,8 +1,9 @@
 package com.healthcare.play.domain.user
 
 import jakarta.persistence.*
-import jakarta.validation.constraints.Email
 import org.hibernate.annotations.UuidGenerator
+import java.time.Instant
+import java.time.LocalDateTime
 import java.util.*
 
 enum class UserRole { PLAYER, CAREFIVER, ADMIN}
@@ -17,6 +18,10 @@ class User (
 
     @Column(nullable = false)
     var passwordHash: String,
+
+    var createdAt: Instant ? = null,
+
+    var deletedAt: Instant ? = null,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -1,4 +1,4 @@
-package com.healthcare.play.domain.user.attendance
+package com.healthcare.play.domain.attendance
 
 import com.healthcare.play.domain.user.User
 import jakarta.persistence.*

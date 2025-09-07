@@ -1,9 +1,9 @@
 package com.healthcare.play.service
 
 import com.healthcare.play.domain.user.UserRepository
-import com.healthcare.play.domain.user.attendance.Attendance
-import com.healthcare.play.domain.user.attendance.AttendanceRepository
-import com.healthcare.play.domain.user.attendance.AttendanceStatus
+import com.healthcare.play.domain.attendance.Attendance
+import com.healthcare.play.domain.attendance.AttendanceRepository
+import com.healthcare.play.domain.attendance.AttendanceStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate

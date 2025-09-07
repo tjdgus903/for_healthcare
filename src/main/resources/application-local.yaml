@@ -10,3 +10,6 @@ ads:
 billing:
   dev-accept: true        # 개발 단계: 서버에서 영수증을 신뢰하고 30일 구독 처리
   default-days: 30
+
+crypto:
+  aesKeyBase64: "U3VwZXJTZWN1cmVLZXlTdXBlclNlY3VyZUtleVN1cGVyU2VjdXJlIQ==" # 예시(무작위 32바이트 base64)
