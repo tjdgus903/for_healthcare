@@ -55,4 +55,13 @@ class AdsController(
             extraTimeTokens = m["extraTimeTokens"] ?: 0
         )
     }
+
+    @PostMapping("/rewards/spend")
+    fun spend(
+        @AuthenticationPrincipal p: AuthPrincipal,
+        @RequestBody @Valid req: TokenSpendRequest
+    ): ResponseEntity<TokenSpendResponse> {
+        val r = ads.spend(p.userId, AdsService.SpendRequest(req.rewardType, req.amount))
+        return ResponseEntity.ok(TokenSpendResponse(r.ok, r.newBalance, r.message))
+    }
 }

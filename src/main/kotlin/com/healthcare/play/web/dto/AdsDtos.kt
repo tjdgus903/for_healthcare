@@ -35,3 +35,13 @@ data class MyInventoryResponse(
     val hintTokens: Int,
     val extraTimeTokens: Int
 )
+
+data class TokenSpendRequest(
+    @field:NotBlank val rewardType: String,  // "HINT" | "EXTRA_TIME"
+    @field:Min(1) val amount: Int = 1
+)
+data class TokenSpendResponse(
+    val ok: Boolean,
+    val newBalance: Map<String, Int>,
+    val message: String?
+)

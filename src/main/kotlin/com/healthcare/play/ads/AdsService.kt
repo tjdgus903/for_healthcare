@@ -36,6 +36,16 @@ class AdsService(
         val todayRemain: Int
     )
 
+    data class SpendRequest(
+        val rewardType: String,   // "HINT" | "EXTRA_TIME"
+        val amount: Int = 1
+    )
+    data class SpendResult(
+        val ok: Boolean,
+        val newBalance: Map<String, Int>,
+        val message: String? = null
+    )
+
     @Transactional(readOnly = true)
     fun getConfig(userId: UUID): AdsConfigDto {
         if (!props.enabled) {
@@ -157,5 +167,37 @@ class AdsService(
         } else {
             mapOf("hintTokens" to inv.hintTokens, "extraTimeTokens" to inv.extraTimeTokens)
         }
+    }
+
+    @Transactional
+    fun spend(userId: UUID, req: SpendRequest): SpendResult {
+        val user = userRepo.findById(userId).orElseThrow()
+        val inv = invRepo.findByUser_Id(userId).orElseGet { invRepo.save(
+            com.healthcare.play.domain.inventory.UserInventory(user = user)
+        ) }
+
+        when (req.rewardType) {
+            "HINT" -> {
+                if (inv.hintTokens < req.amount)
+                    throw ResponseStatusException(HttpStatus.PAYMENT_REQUIRED, "Not enough HINT tokens")
+                inv.hintTokens -= req.amount
+            }
+            "EXTRA_TIME" -> {
+                if (inv.extraTimeTokens < req.amount)
+                    throw ResponseStatusException(HttpStatus.PAYMENT_REQUIRED, "Not enough EXTRA_TIME tokens")
+                inv.extraTimeTokens -= req.amount
+            }
+            else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown reward type")
+        }
+        invRepo.save(inv)
+
+        return SpendResult(
+            ok = true,
+            newBalance = mapOf(
+                "hintTokens" to inv.hintTokens,
+                "extraTimeTokens" to inv.extraTimeTokens
+            ),
+            message = "Token spent"
+        )
     }
 }

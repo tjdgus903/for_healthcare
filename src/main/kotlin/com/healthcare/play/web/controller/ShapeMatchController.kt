@@ -57,4 +57,10 @@ class ShapeMatchController(
         missCount = req.missCount,
         avgReactionMs = req.avgReactionMs
     ))
+
+    @PostMapping("/{sessionId}/extra-time-used")
+    fun extraTimeUsed(@PathVariable sessionId: UUID,
+                      @RequestParam(required=false, defaultValue="0") roundIndex: Int = 0) {
+        // 동일하게 메트릭 저장 로직(선택)
+    }
 }

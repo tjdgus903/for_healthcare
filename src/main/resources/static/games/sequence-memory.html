@@ -43,6 +43,11 @@
 
 <a href="/games/sequence-memory.html"><button>🧠 Sequence Memory</button></a>
 
+<div class="panel" style="margin-top:8px;">
+    <span class="badge">HINT 토큰: <span id="hintBal">-</span></span>
+    <button id="btnUseHint" disabled>힌트 사용 (1)</button>
+</div>
+
 <div class="card" aria-labelledby="optTitle">
     <h3 id="optTitle">2) 옵션</h3>
     <div class="panel">
@@ -285,6 +290,66 @@
           $('btnEnd').disabled = true;
         }
       }
+
+      async function refreshInventory() {
+        const inv = await API.getMyInventory();
+        document.getElementById('hintBal').textContent = String(inv.hintTokens ?? 0);
+        // 힌트 버튼 활성화 조건: 입력 단계(taking) && 토큰>0
+        document.getElementById('btnUseHint').disabled = !(taking && (inv.hintTokens ?? 0) > 0);
+      }
+
+      // 로그인 후 인벤토리 한번 조회
+      $('btnLogin').addEventListener('click', async () => {
+        try {
+          await API.login($('id').value, $('pw').value);
+          $('loginStatus').textContent = '로그인 성공';
+          await refreshInventory();
+        } catch (e) {
+          $('loginStatus').textContent = '로그인 실패';
+        }
+      });
+
+      // 시작 시에도 새로고침
+      $('btnStart').addEventListener('click', async () => {
+        // ... 기존 시작 로직 ...
+        await refreshInventory();
+      });
+
+      // 라운드가 넘어갈 때마다 인벤토리 버튼 상태 갱신
+      function startInputPhase() {
+        attempt = [];
+        startedInputAt = performance.now();
+        taking = true;
+        $('status').textContent = `입력 대기: ${expect.length}개`;
+        refreshInventory().catch(()=>{});
+      }
+
+      // 힌트 사용
+      document.getElementById('btnUseHint').addEventListener('click', async () => {
+      if (!taking) return;
+      try {
+        // 1) 토큰 차감
+        const r = await API.spendToken({ rewardType: 'HINT', amount: 1 });
+        document.getElementById('hintBal').textContent = String(r.newBalance.hintTokens ?? 0);
+
+        // 2) 다음 입력해야 할 심볼 하이라이트
+        const nextIdx = attempt.length; // 아직 입력하지 않은 위치
+        const sym = expect[nextIdx];
+        const btn = [...document.querySelectorAll('.symbol-btn')].find(b => b.getAttribute('data-sym') === sym);
+        if (btn) {
+          btn.classList.add('highlight');
+          await wait(700);
+          btn.classList.remove('highlight');
+        }
+
+        // 3) (선택) 서버 메트릭 로그
+        if (window.fetch) {
+          API.post(`/sequence/${sessionId}/hint-used?roundIndex=${roundIndex}`).catch(()=>{});
+        }
+      } catch (e) {
+        alert('힌트 사용 실패: ' + e.message);
+      }
+      });
 
       function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
     })();

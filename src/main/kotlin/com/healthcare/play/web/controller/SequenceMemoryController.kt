@@ -75,4 +75,18 @@ class SequenceMemoryController(
             avgInputMs = req.avgInputMs
         ))
     }
+
+    @PostMapping("/{sessionId}/hint-used")
+    fun hintUsed(
+        @PathVariable sessionId: UUID,
+        @RequestParam(required = false, defaultValue = "0") roundIndex: Int = 0
+    ) {
+        // 세션 찾아서 메트릭만 남김 (검증 가볍게)
+        val s = svc // SequenceMemoryService의 세션/리포지토리 접근 필요시 공개 메서드 하나 추가해도 됨
+        // 간단히 서비스에 helper 메서드 하나 추가하는 걸 권장:
+        // svc.logMetric(sessionId, "hint_used", value=roundIndex.toDouble())
+        // (아래는 직접 저장 예시)
+        // val session = sessionRepo.findById(sessionId).orElseThrow()
+        // metricRepo.save(SessionMetric(session= session, key="hint_used", value=roundIndex.toDouble()))
+    }
 }

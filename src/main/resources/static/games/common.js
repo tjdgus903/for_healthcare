@@ -58,3 +58,13 @@ API.claimReward = async function({ adNetwork='admob', rewardType='HINT', amount=
 API.getMyInventory = async function() {
   return await API.request('/ads/inventory/me', { method: 'GET' });
 };
+
+API.spendToken = async function({ rewardType, amount=1 }) {
+  return await API.request('/ads/rewards/spend', {
+    method: 'POST',
+    body: { rewardType, amount }
+  });
+};
+API.post = async function(url) {
+  return await API.request(url, { method: 'POST' });
+};
