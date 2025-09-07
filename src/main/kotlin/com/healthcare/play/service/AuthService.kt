@@ -1,6 +1,6 @@
 package com.healthcare.play.service
 
-import com.healthcare.play.domain.user.UserRepository.UserRepository
+import com.healthcare.play.domain.user.UserRepository
 import com.healthcare.play.security.JwtProvider
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service

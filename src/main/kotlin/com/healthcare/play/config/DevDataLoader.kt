@@ -1,7 +1,7 @@
 package com.healthcare.play.config
 
 import com.healthcare.play.domain.user.User
-import com.healthcare.play.domain.user.UserRepository.UserRepository
+import com.healthcare.play.domain.user.UserRepository
 import com.healthcare.play.domain.user.UserRole
 import com.healthcare.play.service.GameCatalogService
 import org.springframework.boot.CommandLineRunner

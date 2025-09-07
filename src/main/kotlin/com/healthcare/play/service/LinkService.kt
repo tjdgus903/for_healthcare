@@ -1,7 +1,7 @@
 package com.healthcare.play.service
 
 import com.healthcare.play.domain.link.*
-import com.healthcare.play.domain.user.UserRepository.UserRepository
+import com.healthcare.play.domain.user.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.security.SecureRandom

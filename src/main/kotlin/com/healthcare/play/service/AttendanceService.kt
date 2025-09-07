@@ -1,6 +1,6 @@
 package com.healthcare.play.service
 
-import com.healthcare.play.domain.user.UserRepository.UserRepository
+import com.healthcare.play.domain.user.UserRepository
 import com.healthcare.play.domain.user.attendance.Attendance
 import com.healthcare.play.domain.user.attendance.AttendanceRepository
 import com.healthcare.play.domain.user.attendance.AttendanceStatus

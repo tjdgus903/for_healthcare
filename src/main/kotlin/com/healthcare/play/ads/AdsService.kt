@@ -4,7 +4,7 @@ import com.healthcare.play.domain.inventory.UserInventory
 import com.healthcare.play.domain.inventory.UserInventoryRepository
 import com.healthcare.play.domain.reward.Reward
 import com.healthcare.play.domain.reward.RewardRepository
-import com.healthcare.play.domain.user.UserRepository.UserRepository
+import com.healthcare.play.domain.user.UserRepository
 import com.healthcare.play.subscription.SubscriptionService
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service

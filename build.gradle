@@ -21,24 +21,30 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
-    implementation 'org.flywaydb:flyway-core'
     implementation 'org.jetbrains.kotlin:kotlin-reflect'
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
+
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly  'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly  'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+    implementation 'org.flywaydb:flyway-core'
+
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
     implementation('org.jfree:jfreechart:1.5.4') {
         exclude group: 'org.jogamp.jogl', module: 'jogl-all'
         exclude group: 'org.jogamp.gluegen', module: 'gluegen-rt'
     }
 
-
     runtimeOnly 'org.postgresql:postgresql'
     runtimeOnly 'com.h2database:h2'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
-    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // JWT <-> JSON 직렬화
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.testcontainers:junit-jupiter'
@@ -49,6 +55,15 @@ tasks.test {
     useJUnitPlatform()
 }
 
+/** Kotlin도 JVM 17로 명시(권장) */
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        jvmTarget = "17"
+        freeCompilerArgs += ["-Xjsr305=strict"]
+    }
+}
+
+/** 메인 클래스 설정 */
 springBoot {
     mainClass = 'com.healthcare.play.HealthcareApplicationKt'
 }

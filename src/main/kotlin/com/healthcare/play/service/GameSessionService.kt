@@ -2,7 +2,7 @@ package com.healthcare.play.service
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.healthcare.play.domain.game.*
-import com.healthcare.play.domain.user.UserRepository.UserRepository
+import com.healthcare.play.domain.user.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Duration
