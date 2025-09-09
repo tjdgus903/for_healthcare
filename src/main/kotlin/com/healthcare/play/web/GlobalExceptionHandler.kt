@@ -25,4 +25,8 @@ class GlobalExceptionHandler {
     fun generic(e: Exception): ResponseEntity<ApiError> =
         ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ApiError(status = 500, error = "INTERNAL_ERROR", message = e.message))
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException::class)
+    fun forbidden(e: org.springframework.security.access.AccessDeniedException) =
+        ResponseEntity.status(403).body(ApiError(status=403, error="FORBIDDEN", message=e.message))
 }
