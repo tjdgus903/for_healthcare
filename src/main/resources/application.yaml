@@ -1,69 +1,71 @@
+# application.yaml  (공통 최소)
 spring:
   application:
     name: healthcare-play
   profiles:
-    default: local
+    default: local   # 기본은 local(H2)
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+  sql:
+    init:
+      mode: never     # schema.sql/data.sql 자동실행 방지
+logging:
+  level:
+    org.hibernate.SQL: info
 
 ---
-
-spring:
-  security:
-    filter:
-      dispatcher-types: REQUEST
-
----
-
-# JWT 설정 (로컬 예시 값 — 운영에서는 환경변수/Secret Manager로 주입!)
-jwt:
-  secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_32B_MIN"
-  issuer: "healthcare-app"
-  access-token-minutes: 60     # 액세스 토큰 유효기간(분)
-
----
+# --- local(H2) ---
 spring:
   config:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:h2:mem:neurocare;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+    url: jdbc:h2:mem:healthcare;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
     driver-class-name: org.h2.Driver
     username: sa
     password:
   jpa:
     hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
-        jdbc.time_zone: Asia/Seoul
-  h2:
-    console:
-      enabled: true
-  jackson:
-    time-zone: Asia/Seoul
+      ddl-auto: create-drop   # 로컬은 매번 깨끗하게 생성/삭제 → 인덱스 중복 경고 사라짐
+  flyway:
+    enabled: false            # 로컬에선 Hibernate가 스키마 주도
+
+crypto:
+  aesKeyBase64: "U3VwZXJTZWN1cmVLZXlTdXBlclNlY3VyZUtleVN1cGVyU2VjdXJlIQ=="  # 예시 32바이트 Base64
+
+h2:
+  console:
+    enabled: true
+
+jwt:
+  secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_32B_MIN"
+  issuer: "healthcare-app"
+  access-token-minutes: 60
 server:
   port: 8080
 
 ---
+# --- prod(PostgreSQL) ---
 spring:
   config:
     activate:
       on-profile: prod
   datasource:
-    url: jdbc:postgresql://<HOST>:5432/neurocare
-    username: fhc
-    password: fhc
+    url: jdbc:postgresql://192.168.56.103:5432/healthcare
+    username: ${DB_USER:fhc}
+    password: ${DB_PASS:fhc}
+    driver-class-name: org.postgresql.Driver   # PG를 확실히 강제
   jpa:
     hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        format_sql: true
-        jdbc.lob.non_contextual_creation: true
+      ddl-auto: validate        # 운영은 Hibernate가 손대지 않고 검증만
   flyway:
     enabled: true
-    baseline-on-migrate: true
-  jackson:
-    time-zone: Asia/Seoul
+    locations: classpath:db/migration/postgresql
+    baseline-on-migrate: true   # 기존 객체가 있을 때만 true, 빈 스키마면 false 가능
+logging:
+  level:
+    org.hibernate.SQL: info
 server:
   port: 8080
