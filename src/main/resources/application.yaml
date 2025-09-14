@@ -65,7 +65,7 @@ spring:
     locations: classpath:db/migration/postgresql
     baseline-on-migrate: true   # 기존 객체가 있을 때만 true, 빈 스키마면 false 가능
 
-crypto:
+icrypto:
   aesKeyBase64: ${CRYPTO_AESKEYBASE64}
 
 jwt:
