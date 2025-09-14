@@ -33,7 +33,12 @@
     <retain-sticky-names value="false" />
   </component>
   <component name="DBNavigator.Project.FileConnectionMappingManager">
-    <mapping file-url="file://$PROJECT_DIR$/src/main/resources/db/migration/V1__init.sql" connection-id="64fa382d-595a-4517-95ca-6b82dfb3208c" session-id="MAIN" current-schema="public" />
+    <mapping file-url="file://$PROJECT_DIR$/src/main/resources/db/migration/postgresql/V4__add_created_at_to_cohort.sql" connection-id="64fa382d-595a-4517-95ca-6b82dfb3208c" session-id="MAIN" current-schema="public" />
+    <mapping file-url="file://$PROJECT_DIR$/src/main/resources/db/migration/postgresql/V5__add_org_id_to_cohort.sql" connection-id="64fa382d-595a-4517-95ca-6b82dfb3208c" session-id="MAIN" current-schema="public" />
+    <mapping file-url="file://$PROJECT_DIR$/src/main/resources/db/migration/postgresql/V1__init.sql" connection-id="64fa382d-595a-4517-95ca-6b82dfb3208c" session-id="MAIN" current-schema="public" />
+    <mapping file-url="file://$PROJECT_DIR$/src/main/resources/db/migration/postgresql/V6__sync_schema.sql" connection-id="64fa382d-595a-4517-95ca-6b82dfb3208c" session-id="MAIN" current-schema="public" />
+    <mapping file-url="file://$PROJECT_DIR$/src/main/resources/db/migration/postgresql/V3__add_status_to_attendance.sql" connection-id="64fa382d-595a-4517-95ca-6b82dfb3208c" session-id="MAIN" current-schema="public" />
+    <mapping file-url="file://$PROJECT_DIR$/src/main/resources/db/migration/postgresql/V2__add_reward_claimed_to_attendance.sql" connection-id="64fa382d-595a-4517-95ca-6b82dfb3208c" session-id="MAIN" current-schema="public" />
   </component>
   <component name="DBNavigator.Project.ObjectQuickFilterManager">
     <last-used-operator value="EQUAL" />

@@ -60,6 +60,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate        # 운영은 Hibernate가 손대지 않고 검증만
+    properties:
+      hibernate:
+        default_schema: public
   flyway:
     enabled: true
     locations: classpath:db/migration/postgresql
@@ -78,3 +81,31 @@ logging:
     org.hibernate.SQL: info
 server:
   port: 8080
+
+
+---
+# 커넥션 풀 & 타임존 등 운영 기본값
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1800000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: false
+        default_batch_fetch_size: 50
+server:
+  tomcat:
+    threads:
+      max: 200
+management:
+  endpoints:
+    web.exposure.include: health,info,metrics,prometheus
