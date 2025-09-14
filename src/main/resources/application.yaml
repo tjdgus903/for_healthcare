@@ -64,6 +64,15 @@ spring:
     enabled: true
     locations: classpath:db/migration/postgresql
     baseline-on-migrate: true   # 기존 객체가 있을 때만 true, 빈 스키마면 false 가능
+
+crypto:
+  aesKeyBase64: ${CRYPTO_AESKEYBASE64}
+
+jwt:
+  secret: ${JWT_SECRET}                  # 운영은 환경변수로 주입 권장
+  issuer: ${JWT_ISSUER:healthcare-app}
+  access-token-minutes: ${JWT_ACCESS_TOKEN_MINUTES:60}
+
 logging:
   level:
     org.hibernate.SQL: info
