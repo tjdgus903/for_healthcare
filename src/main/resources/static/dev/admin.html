@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"/>
+    <title>Healthcare Dev Console</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 900px; margin: 24px auto; line-height:1.5; }
+        .card { border:1px solid #ddd; border-radius:12px; padding:16px; margin-bottom:16px; }
+        button { padding:10px 14px; border-radius:10px; border:1px solid #888; cursor:pointer; }
+        input,select { padding:8px; border-radius:8px; border:1px solid #aaa; width:100%; max-width:420px; }
+        .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+        .muted{ color:#666; font-size:12px; }
+        pre { background:#111; color:#eee; padding:12px; border-radius:8px; overflow:auto; max-height:300px;}
+    </style>
+</head>
+<body>
+<h1>Healthcare Dev Console</h1>
+<p class="muted">F12(Network/Console) 켜고 보세요. 모든 응답은 아래에도 출력됩니다.</p>
+
+<div class="card">
+    <h2>1) 로그인 → JWT 보관</h2>
+    <div class="row">
+        <input id="email" placeholder="email (예: fhc)" value="fhc"/>
+        <input id="password" type="password" placeholder="password (예: fhc)" value="fhc"/>
+        <button onclick="login()">로그인</button>
+        <button onclick="clearToken()">토큰 삭제</button>
+    </div>
+    <div class="muted">토큰: <span id="tokenPreview">-</span></div>
+</div>
+
+<div class="card">
+    <h2>2) 출석</h2>
+    <div class="row">
+        <button onclick="post('/attendance/check')">오늘 출석</button>
+        <input id="month" value="2025-09" />
+        <button onclick="get(`/attendance/calendar?month=${document.getElementById('month').value}`)">달력 조회</button>
+    </div>
+</div>
+
+<div class="card">
+    <h2>3) 게임 세션</h2>
+    <div class="row">
+        <select id="gameType">
+            <option value="COLOR_TAP">COLOR_TAP</option>
+            <option value="SEQUENCE_MEMORY">SEQUENCE_MEMORY</option>
+            <option value="SHAPE_MATCH">SHAPE_MATCH</option>
+        </select>
+        <button onclick="startSession()">세션 시작</button>
+        <input id="sessionId" placeholder="sessionId" style="max-width:300px"/>
+        <button onclick="endSession()">세션 종료(샘플)</button>
+    </div>
+</div>
+
+<div class="card">
+    <h2>4) 구독 상태/광고 설정</h2>
+    <div class="row">
+        <button onclick="get('/subs/status')">구독 상태</button>
+        <button onclick="get('/ads/config')">광고 설정</button>
+    </div>
+</div>
+
+<div class="card">
+    <h2>5) 리포트/개인정보</h2>
+    <div class="row">
+        <button onclick="get('/reports/me')">내 리포트</button>
+        <button onclick="get('/privacy/consents')">동의 로그</button>
+        <button onclick="download('/privacy/export.zip')">데이터 내보내기(zip)</button>
+    </div>
+</div>
+
+<div class="card">
+    <h2>응답</h2>
+    <pre id="out">-</pre>
+</div>
+
+<script>
+    const API = location.origin; // 같은 도메인이면 그대로, 프론트 따로면 http://localhost:8080 으로 교체
+    const out = (v)=>document.getElementById('out').textContent =
+        (typeof v === 'string') ? v : JSON.stringify(v,null,2);
+
+    const getToken = ()=>localStorage.getItem('jwt') || '';
+    const setToken = (t)=>{ localStorage.setItem('jwt', t||''); document.getElementById('tokenPreview').textContent=(t? t.slice(0,30)+'...' : '-'); }
+    setToken(getToken());
+
+    async function req(path, opt={}) {
+      const headers = opt.headers || {};
+      const jwt = getToken();
+      if (jwt) headers['Authorization'] = 'Bearer ' + jwt;
+      const res = await fetch(API + path, { ...opt, headers });
+      let body;
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) body = await res.json();
+      else body = await res.text();
+      console.log(opt.method||'GET', path, res.status, body);
+      out({status:res.status, body});
+      if(!res.ok) throw new Error(res.status+' '+JSON.stringify(body));
+      return body;
+    }
+    const get = (p)=>req(p);
+    const post = (p, data)=>req(p, { method:'POST', headers:{'Content-Type':'application/json'}, body: data? JSON.stringify(data): null });
+
+    async function login(){
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const res = await post('/auth/login', { email, password });
+      setToken(res.token);
+    }
+    function clearToken(){ setToken(''); }
+
+    async function startSession(){
+      const type = document.getElementById('gameType').value;
+      // 서버 로직에 맞춰 gameId, gameType 중 무엇을 받는지 확인해서 변경
+      // 예시: /sessions/start?type=COLOR_TAP
+      const res = await post('/sessions/start?type='+encodeURIComponent(type));
+      document.getElementById('sessionId').value = res.sessionId || res.id || '';
+    }
+
+    async function endSession(){
+      const id = document.getElementById('sessionId').value;
+      // 게임마다 payload 다르지만 샘플 값:
+      const payload = {
+        score: 10,
+        accuracy: 0.9,
+        meta: { demo:true }
+      };
+      const res = await post(`/sessions/${id}/end`, payload);
+      out(res);
+    }
+
+    async function download(path){
+      const jwt = getToken();
+      const res = await fetch(API + path, { headers: jwt? {Authorization:'Bearer '+jwt}: {} });
+      if(!res.ok){ out(await res.text()); return; }
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'export.zip';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      out('다운로드 시작');
+    }
+</script>
+</body>
+</html>

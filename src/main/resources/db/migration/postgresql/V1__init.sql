@@ -11,8 +11,10 @@ create table if not exists "user" (
 -- === Games ===
 create table if not exists game (
   id uuid primary key,
-  type varchar(40) not null,       -- ex) COLOR_TAP / SEQUENCE_MEMORY / SHAPE_MATCH
-  name varchar(100) not null
+  type varchar(40) not null,                 -- ex) COLOR_TAP / SEQUENCE_MEMORY / SHAPE_MATCH
+  name varchar(100) not null,
+  active boolean not null default true,      -- 신규
+  description text null                      -- 신규
 );
 
 -- === Game Sessions ===
@@ -24,11 +26,12 @@ create table if not exists game_session (
   ended_at timestamp null,
   score integer null,
   accuracy double precision null,
-  duration_sec bigint null,
-  game_meta jsonb null
+  duration_sec bigint null,                  -- 엔티티가 BIGINT 기대
+  game_meta jsonb null,                      -- 기존 유지(엔티티에서 안 써도 무해)
+  meta text null                             -- 엔티티: String? -> TEXT
 );
-create index if not exists idx_session_user on game_session(user_id);
-create index if not exists idx_session_game on game_session(game_id);
+create index if not exists idx_session_user    on game_session(user_id);
+create index if not exists idx_session_game    on game_session(game_id);
 create index if not exists idx_session_started on game_session(started_at);
 
 -- === Session Metrics (optional key/value metrics per session) ===
@@ -47,7 +50,8 @@ create table if not exists attendance (
   id uuid primary key,
   user_id uuid not null references "user"(id),
   date date not null,
-  created_at timestamp not null
+  created_at timestamp not null,
+  status varchar(20) not null default 'PRESENT'   -- 신규
 );
 create unique index if not exists uq_attendance_user_date on attendance(user_id, date);
 
@@ -55,17 +59,17 @@ create unique index if not exists uq_attendance_user_date on attendance(user_id,
 create table if not exists subscription (
   id uuid primary key,
   user_id uuid not null references "user"(id),
-  platform varchar(20) not null,          -- ANDROID / IOS
+  platform varchar(20) not null,                 -- ANDROID / IOS
   product_id varchar(120) not null,
   purchase_token varchar(200) not null unique,
-  status varchar(20) not null,            -- ACTIVE / CANCELED / EXPIRED
+  status varchar(20) not null,                   -- ACTIVE / CANCELED / EXPIRED
   started_at timestamp not null,
   expires_at timestamp null,
   canceled_at timestamp null,
   last_verified_at timestamp null,
   raw_payload text null
 );
-create index if not exists idx_sub_user on subscription(user_id);
+create index if not exists idx_sub_user  on subscription(user_id);
 create index if not exists idx_sub_token on subscription(purchase_token);
 
 -- === Organizations (B2B) ===
@@ -78,7 +82,7 @@ create table if not exists organization_member (
   id uuid primary key,
   organization_id uuid not null references organization(id),
   user_id uuid not null references "user"(id),
-  role varchar(20) not null,              -- ADMIN / VIEWER ...
+  role varchar(20) not null,                   -- ADMIN / VIEWER ...
   joined_at timestamp not null
 );
 create unique index if not exists uq_org_member on organization_member(organization_id, user_id);
@@ -86,14 +90,16 @@ create unique index if not exists uq_org_member on organization_member(organizat
 -- === Cohorts (group of users inside org) ===
 create table if not exists cohort (
   id uuid primary key,
-  organization_id uuid not null references organization(id),
-  name varchar(120) not null
+  org_id uuid not null references organization(id),   -- 엔티티가 org_id를 기대
+  name varchar(120) not null,
+  created_at timestamp not null                       -- 신규
 );
 
 create table if not exists cohort_member (
   id uuid primary key,
   cohort_id uuid not null references cohort(id),
-  user_id uuid not null references "user"(id)
+  user_id uuid not null references "user"(id),
+  joined_at timestamp not null                        -- 신규
 );
 create unique index if not exists uq_cohort_member on cohort_member(cohort_id, user_id);
 
@@ -101,7 +107,7 @@ create unique index if not exists uq_cohort_member on cohort_member(cohort_id, u
 create table if not exists consent (
   id uuid primary key,
   user_id uuid not null references "user"(id),
-  doc varchar(50) not null,               -- "privacy" / "terms" / "data_share"
+  doc varchar(50) not null,                -- "privacy" / "terms" / "data_share"
   version varchar(30) not null,
   accepted boolean not null,
   at timestamp not null,
@@ -109,3 +115,16 @@ create table if not exists consent (
   user_agent varchar(255) null
 );
 create index if not exists idx_consent_user on consent(user_id);
+
+-- === Link Invites (org join by code) ===
+create table if not exists link_invite (
+  id uuid primary key,
+  code varchar(64) not null unique,
+  org_id uuid not null references organization(id),
+  role varchar(20) not null,                 -- ORG 내 권한
+  expires_at timestamp null,
+  created_at timestamp not null,
+  revoked boolean not null default false,    -- 신규
+  used_at timestamp null                     -- 신규
+);
+create index if not exists idx_invite_org on link_invite(org_id);

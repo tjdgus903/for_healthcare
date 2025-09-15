@@ -1,5 +1,0 @@
-ALTER TABLE cohort
-  ADD COLUMN IF NOT EXISTS created_at timestamp NOT NULL DEFAULT now();
-
-ALTER TABLE cohort
-  ALTER COLUMN created_at DROP DEFAULT;

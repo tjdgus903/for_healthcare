@@ -59,14 +59,20 @@ spring:
     driver-class-name: org.postgresql.Driver   # PG를 확실히 강제
   jpa:
     hibernate:
-      ddl-auto: validate        # 운영은 Hibernate가 손대지 않고 검증만
+      ddl-auto: validate
     properties:
-      hibernate:
-        default_schema: public
+      javax:
+        persistence:
+          schema-generation:
+            scripts:
+              action: create
+              create-target: build/generated-schema.sql
+            database:
+              action: none
   flyway:
-    enabled: true
-    locations: classpath:db/migration/postgresql
-    baseline-on-migrate: true   # 기존 객체가 있을 때만 true, 빈 스키마면 false 가능
+    enabled: false
+    #locations: classpath:db/migration/postgresql
+    #baseline-on-migrate: true   # 기존 객체가 있을 때만 true, 빈 스키마면 false 가능
 
 icrypto:
   aesKeyBase64: ${CRYPTO_AESKEYBASE64}
