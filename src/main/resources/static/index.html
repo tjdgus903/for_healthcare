@@ -27,6 +27,7 @@
         <label>ID <input id="id" value="fhc"/></label>
         <label>PW <input id="pw" value="fhc" type="password"/></label>
         <button id="btnLogin">로그인</button>
+        <button id="btnRegist">간편가입</button>
         <small id="loginStatus"></small>
     </div>
     <pre id="tokenPreview"></pre>
@@ -103,6 +104,23 @@
       const ct = res.headers.get('content-type') || '';
       return ct.includes('application/json') ? res.json() : res.text();
     }
+
+    // 간편 계정등록
+    document.getElementById('btnRegist').addEventListener('click', async () => {
+      try {
+        const id = document.getElementById('id').value;
+        const password = document.getElementById('pw').value;
+        const data = await api('/auth/signup', {
+          method: 'POST',
+          body: JSON.stringify({ id, password })
+        });
+        setText('loginStatus', '가입 성공');
+        setText('tokenPreview', pretty(data));
+      } catch (e) {
+        setText('loginStatus', '가입 실패: ' + e.message);
+        setText('tokenPreview', '');
+      }
+    });
 
     // 로그인
     document.getElementById('btnLogin').addEventListener('click', async () => {

@@ -28,6 +28,7 @@
         <input id="email" placeholder="email (예: fhc)" value="fhc"/>
         <input id="password" type="password" placeholder="password (예: fhc)" value="fhc"/>
         <button onclick="login()">로그인</button>
+        <button onclick="signup()">간편가입</button>
         <button onclick="clearToken()">토큰 삭제</button>
     </div>
     <div class="muted">토큰: <span id="tokenPreview">-</span></div>
@@ -103,6 +104,13 @@
     }
     const get = (p)=>req(p);
     const post = (p, data)=>req(p, { method:'POST', headers:{'Content-Type':'application/json'}, body: data? JSON.stringify(data): null });
+
+    async function signup(){
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const res = await post('/auth/signup', { email, password });
+      setToken(res.token);
+    }
 
     async function login(){
       const email = document.getElementById('email').value;
