@@ -13,7 +13,12 @@ import org.springframework.web.bind.annotation.*
 class AuthController(
     private val auth: AuthService
 ) {
+    @PostMapping("/signup")
+    fun signUp(@RequestBody req: Sign)
+
+
     @PostMapping("/login")
-    fun login(@RequestBody req: LoginRequest): ResponseEntity<TokenResponse> =
-        ResponseEntity.ok(auth.login(req))
+    fun login(
+        @RequestBody req: LoginRequest
+    ): ResponseEntity<TokenResponse> = ResponseEntity.ok(auth.login(req))
 }

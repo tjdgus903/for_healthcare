@@ -17,9 +17,18 @@ class AuthService(
     private val jwtProvider: JwtProvider
 ) {
     fun login(req: LoginRequest): TokenResponse {
+        // 0. 암호화 체크
+        println("0. ENC=" + passwordEncoder::class.qualifiedName)
+
+        // 1. 바디 바인딩 확인
+        println("1. LOGIN try email=${req.email} pwNull=${req.password}")
+
         val user = userRepo.findByEmail(req.email).orElseThrow {
+            // 2. 사용자 조회 실패
+            println("2. LOGIN fail: no user for email=${req.email}")
             IllegalArgumentException("No user for email=${req.email}")
         }
+
         require(passwordEncoder.matches(req.password, user.passwordHash)) { "Bad credentials" }
 
         val token = jwtProvider.createToken(user.id!!, user.role.name)

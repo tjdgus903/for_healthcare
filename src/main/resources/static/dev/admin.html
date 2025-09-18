@@ -110,6 +110,7 @@
       const res = await post('/auth/login', { email, password });
       setToken(res.token);
     }
+
     function clearToken(){ setToken(''); }
 
     async function startSession(){
