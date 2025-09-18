@@ -1,0 +1,38 @@
+:root {
+  --font-size-base: 18px;
+  --btn-size: 52px;           /* 터치 영역 44px 이상 권장 */
+  --radius: 14px;
+  --gap: 12px;
+
+  --bg: #fafafa;
+  --fg: #111;
+  --primary: #2a7cf7;
+  --danger: #d43c3c;
+  --muted: #666;
+}
+
+:root[data-theme="high-contrast"] {
+  --bg: #000;
+  --fg: #fff;
+  --primary: #00e5ff;
+  --danger: #ff4d4d;
+  --muted: #aaa;
+}
+
+body { background: var(--bg); color: var(--fg); font-size: var(--font-size-base); }
+button {
+  min-height: var(--btn-size);
+  min-width: 160px;
+  border-radius: var(--radius);
+  border: 2px solid var(--fg);
+  background: transparent;
+  color: var(--fg);
+  font-weight: 700;
+  padding: 10px 14px;
+}
+button.primary { background: var(--primary); color: #000; border-color: var(--primary); }
+button.danger  { background: var(--danger);  color: #000; border-color: var(--danger); }
+
+.big { font-size: 1.2em; }
+.card { border:2px solid var(--fg); border-radius: var(--radius); padding:16px; margin-bottom:16px; }
+.row { display:flex; gap:var(--gap); flex-wrap:wrap; align-items:center; }

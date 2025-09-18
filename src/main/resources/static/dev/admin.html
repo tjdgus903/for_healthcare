@@ -13,10 +13,14 @@
         .muted{ color:#666; font-size:12px; }
         pre { background:#111; color:#eee; padding:12px; border-radius:8px; overflow:auto; max-height:300px;}
     </style>
+    <link rel="stylesheet" href="/css/a11y.css" />
 </head>
 <body>
 <h1>Healthcare Dev Console</h1>
 <p class="muted">F12(Network/Console) 켜고 보세요. 모든 응답은 아래에도 출력됩니다.</p>
+
+<button onclick="verifyStub()">구독 검증(dev)</button>
+<button class="primary" onclick="toggleTheme()">고대비 토글</button>
 
 <div class="card">
     <h2>1) 로그인 → JWT 보관</h2>
@@ -139,6 +143,22 @@
       a.click();
       URL.revokeObjectURL(a.href);
       out('다운로드 시작');
+    }
+
+    async function verifyStub(){
+      const body = {
+        platform: "ANDROID",
+        productId: "sub_premium_monthly",
+        purchaseToken: "dev-token-"+Date.now(),
+        devMode: true
+      };
+      const res = await post('/subs/verify', body);
+      out(res);
+    }
+
+    function toggleTheme(){
+      const r = document.documentElement;
+      r.setAttribute('data-theme', r.getAttribute('data-theme') === 'high-contrast' ? '' : 'high-contrast');
     }
 </script>
 </body>

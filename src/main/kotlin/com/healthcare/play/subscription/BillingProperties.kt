@@ -4,6 +4,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties(prefix = "billing")
 data class BillingProperties(
-    val devAccept: Boolean = false,
-    val defaultDays: Long = 30
+    var devAccept: Boolean = true,
+    var defaultDays: Long = 7
 )

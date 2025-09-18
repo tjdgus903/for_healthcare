@@ -15,6 +15,10 @@ logging:
   level:
     org.hibernate.SQL: info
 
+billing:
+  dev-accept: true       # true면 서버가 검증을 '통과'시켜줌(개발/테스트용)
+  default-days: 7        # 스텁 통과 시 유효기간(일)
+
 ---
 # --- local(H2) ---
 spring:

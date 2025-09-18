@@ -2,6 +2,7 @@ package com.healthcare.play.service
 
 import com.healthcare.play.domain.user.UserRepository
 import com.healthcare.play.security.JwtProvider
+import com.healthcare.play.web.dto.LoginRequest
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 
@@ -11,21 +12,19 @@ import org.springframework.stereotype.Service
  */
 @Service
 class AuthService(
-    private val userRepository: UserRepository,
+    private val userRepo: UserRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtProvider: JwtProvider
 ) {
-    fun login(id: String, password: String): String {
-        val user = userRepository.findByEmail(id)
-            .orElseThrow { IllegalArgumentException("Invalid credentials") }
+    fun login(req: LoginRequest): TokenResponse {
+        val user = userRepo.findByEmail(req.email).orElseThrow {
+            IllegalArgumentException("No user for email=${req.email}")
+        }
+        require(passwordEncoder.matches(req.password, user.passwordHash)) { "Bad credentials" }
 
-        if (!passwordEncoder.matches(password, user.passwordHash))
-            throw IllegalArgumentException("Invalid credentials")
-
-        return jwtProvider.generateAccessToken(
-            userId = user.id ?: throw IllegalStateException("User id missing"),
-            email = user.email,
-            role = user.role.name
-        )
+        val token = jwtProvider.createToken(user.id!!, user.role.name)
+        return TokenResponse(token)
     }
 }
+
+data class TokenResponse(val token: String)

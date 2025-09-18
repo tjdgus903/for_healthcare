@@ -1,11 +1,11 @@
 package com.healthcare.play.security
 
 import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.security.Keys
+import io.jsonwebtoken.SignatureAlgorithm
 import org.springframework.stereotype.Component
-import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.*
+import javax.crypto.spec.SecretKeySpec
 
 data class JwtPayload(
     val userId: UUID,
@@ -17,7 +17,11 @@ data class JwtPayload(
 class JwtProvider(
     private val props: JwtProperties,
 ) {
-    private val key = Keys.hmacShaKeyFor(props.secret.toByteArray(StandardCharsets.UTF_8))
+    // private val key = Keys.hmacShaKeyFor(props.secret.toByteArray(StandardCharsets.UTF_8))
+    private val key = SecretKeySpec(
+        Base64.getDecoder().decode(props.secret),
+        SignatureAlgorithm.HS256.jcaName
+    )
 
     fun generateAccessToken(userId: UUID, email: String, role: String): String{
         val now = Instant.now()
@@ -41,5 +45,18 @@ class JwtProvider(
             email = body["email"] as String,
             role = body["role"] as String
         )
+    }
+
+    fun createToken(userId: UUID, role: String): String {
+        val now = Date()
+        val expiry = Date(now.time + java.time.Duration.ofMinutes(props.accessTokenMinutes).toMillis())
+
+        return Jwts.builder()
+            .setSubject(userId.toString())
+            .claim("role", role)
+            .setIssuedAt(now)
+            .setExpiration(expiry)
+            .signWith(key, SignatureAlgorithm.HS256)
+            .compact()
     }
 }
