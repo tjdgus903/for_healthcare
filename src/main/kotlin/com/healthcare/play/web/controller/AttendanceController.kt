@@ -18,8 +18,11 @@ class AttendanceController(
     private val attendanceService: AttendanceService
 ) {
     @PostMapping("/check")
-    fun check(@AuthenticationPrincipal principal: AuthPrincipal): CheckAttendanceResponse {
+    fun check(@AuthenticationPrincipal principal: AuthPrincipal?): CheckAttendanceResponse {
+        requireNotNull(principal) { "Unauthorized" }
+        println(principal)
         val r = attendanceService.check(principal.userId)
+        println(r)
         return CheckAttendanceResponse(r.date, r.isNewCheck, r.currentStreak)
     }
 

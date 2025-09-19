@@ -37,8 +37,8 @@
 <div class="card">
     <h2>2) 출석</h2>
     <div class="row">
-        <button onclick="post('/attendance/check')">오늘 출석</button>
-        <input id="month" value="2025-09" />
+        <button onclick="attendanceCheck()">오늘 출석</button>
+        <input id="month" value="2025-09-19" />
         <button onclick="get(`/attendance/calendar?month=${document.getElementById('month').value}`)">달력 조회</button>
     </div>
 </div>
@@ -113,10 +113,20 @@
     }
 
     async function login(){
+      console.log("login");
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const res = await post('/auth/login', { email, password });
       setToken(res.token);
+    }
+
+    async function attendanceCheck(){
+      try {
+        const res = await post('/attendance/check');
+        console.log(res);
+      } catch (e) {
+        console.log(e)
+      }
     }
 
     function clearToken(){ setToken(''); }
