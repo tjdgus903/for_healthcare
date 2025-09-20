@@ -4,32 +4,28 @@
     <meta charset="utf-8"/>
     <title>Healthcare Dev Console</title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <style>
-        body { font-family: system-ui, sans-serif; max-width: 900px; margin: 24px auto; line-height:1.5; }
-        .card { border:1px solid #ddd; border-radius:12px; padding:16px; margin-bottom:16px; }
-        button { padding:10px 14px; border-radius:10px; border:1px solid #888; cursor:pointer; }
-        input,select { padding:8px; border-radius:8px; border:1px solid #aaa; width:100%; max-width:420px; }
-        .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-        .muted{ color:#666; font-size:12px; }
-        pre { background:#111; color:#eee; padding:12px; border-radius:8px; overflow:auto; max-height:300px;}
-    </style>
+    <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/css/a11y.css" />
+    <!-- defer: DOM 파싱 후 실행 -->
+    <script src="/js/frontend.js" defer></script>
 </head>
 <body>
 <h1>Healthcare Dev Console</h1>
 <p class="muted">F12(Network/Console) 켜고 보세요. 모든 응답은 아래에도 출력됩니다.</p>
 
-<button onclick="verifyStub()">구독 검증(dev)</button>
-<button class="primary" onclick="toggleTheme()">고대비 토글</button>
+<div class="row" style="margin-bottom:8px">
+    <button id="btnVerifyStub">구독 검증(dev)</button>
+    <button id="btnToggleTheme" class="primary">고대비 토글</button>
+</div>
 
 <div class="card">
     <h2>1) 로그인 → JWT 보관</h2>
     <div class="row">
-        <input id="email" placeholder="email (예: fhc)" value="fhc"/>
-        <input id="password" type="password" placeholder="password (예: fhc)" value="fhc"/>
-        <button onclick="login()">로그인</button>
-        <button onclick="signup()">간편가입</button>
-        <button onclick="clearToken()">토큰 삭제</button>
+        <input id="email" placeholder="email (예: fhc)" value="fhc" autocomplete="username"/>
+        <input id="password" type="password" placeholder="password (예: fhc)" value="fhc" autocomplete="current-password"/>
+        <button id="btnLogin">로그인</button>
+        <button id="btnSignup">간편가입</button>
+        <button id="btnClearToken">토큰 삭제</button>
     </div>
     <div class="muted">토큰: <span id="tokenPreview">-</span></div>
 </div>
@@ -37,9 +33,9 @@
 <div class="card">
     <h2>2) 출석</h2>
     <div class="row">
-        <button onclick="attendanceCheck()">오늘 출석</button>
+        <button id="btnAttendanceCheck">오늘 출석</button>
         <input id="month" value="2025-09" />
-        <button onclick="fetchCalendar()">달력 조회</button>
+        <button id="btnFetchCalendar">달력 조회</button>
     </div>
     <div id="calendar" style="margin-top:12px"></div>
 </div>
@@ -52,26 +48,26 @@
             <option value="SEQUENCE_MEMORY">SEQUENCE_MEMORY</option>
             <option value="SHAPE_MATCH">SHAPE_MATCH</option>
         </select>
-        <button onclick="startSession()">세션 시작</button>
+        <button id="btnStartSession">세션 시작</button>
         <input id="sessionId" placeholder="sessionId" style="max-width:300px"/>
-        <button onclick="endSession()">세션 종료(샘플)</button>
+        <button id="btnEndSession">세션 종료(샘플)</button>
     </div>
 </div>
 
 <div class="card">
     <h2>4) 구독 상태/광고 설정</h2>
     <div class="row">
-        <button onclick="get('/subs/status')">구독 상태</button>
-        <button onclick="get('/ads/config')">광고 설정</button>
+        <button id="btnSubsStatus">구독 상태</button>
+        <button id="btnAdsConfig">광고 설정</button>
     </div>
 </div>
 
 <div class="card">
     <h2>5) 리포트/개인정보</h2>
     <div class="row">
-        <button onclick="get('/reports/me')">내 리포트</button>
-        <button onclick="get('/privacy/consents')">동의 로그</button>
-        <button onclick="download('/privacy/export.zip')">데이터 내보내기(zip)</button>
+        <button id="btnMyReport">내 리포트</button>
+        <button id="btnConsents">동의 로그</button>
+        <button id="btnExportZip">데이터 내보내기(zip)</button>
     </div>
 </div>
 
@@ -80,170 +76,5 @@
     <pre id="out">-</pre>
 </div>
 
-<script>
-    const API = location.origin; // 같은 도메인이면 그대로, 프론트 따로면 http://localhost:8080 으로 교체
-    const out = (v)=>document.getElementById('out').textContent =
-        (typeof v === 'string') ? v : JSON.stringify(v,null,2);
-
-    const getToken = ()=>localStorage.getItem('jwt') || '';
-    const setToken = (t)=>{ localStorage.setItem('jwt', t||''); document.getElementById('tokenPreview').textContent=(t? t.slice(0,30)+'...' : '-'); }
-    setToken(getToken());
-
-    async function req(path, opt={}) {
-      const headers = opt.headers || {};
-      const jwt = getToken();
-      if (jwt) headers['Authorization'] = 'Bearer ' + jwt;
-      const res = await fetch(API + path, { ...opt, headers });
-      let body;
-      const ct = res.headers.get('content-type') || '';
-      if (ct.includes('application/json')) body = await res.json();
-      else body = await res.text();
-      console.log(opt.method||'GET', path, res.status, body);
-      out({status:res.status, body});
-      if(!res.ok) throw new Error(res.status+' '+JSON.stringify(body));
-      return body;
-    }
-    const get = (p)=>req(p);
-    const post = (p, data)=>req(p, { method:'POST', headers:{'Content-Type':'application/json'}, body: data? JSON.stringify(data): null });
-
-    // 가입(id/pw)
-    async function signup(){
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const res = await post('/auth/signup', { email, password });
-      setToken(res.token);
-    }
-
-    // 로그인
-    async function login(){
-      console.log("login");
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const res = await post('/auth/login', { email, password });
-      setToken(res.token);
-    }
-
-    // 출석체크
-    async function attendanceCheck(){
-      try {
-        const res = await post('/attendance/check');
-        console.log(res);
-      } catch (e) {
-        console.log(e)
-      }
-    }
-
-    // 달력 조회
-    async function fetchCalendar(){
-      const v = document.getElementById('month').value; // "yyyy-MM"
-      const days = await get(`/attendance/calendar?month=${encodeURIComponent(v)}`);
-      renderCalendar(v, days);
-    }
-
-    // 달력 생성
-    function renderCalendar(yyyyMm, days){
-      const host = document.getElementById('calendar');
-      const [y, m] = yyyyMm.split('-').map(Number);   // e.g. 2025, 9
-      const first = new Date(y, m - 1, 1);
-      const last  = new Date(y, m, 0);                // 말일
-      const startW = first.getDay();                   // 0=Sun..6=Sat
-
-      // 응답을 빠르게 조회하기 위해 Map(date->checked)
-      const checkedMap = new Map(days.map(d => [d.date, !!d.checked]));
-
-      // 헤더 + 7칸 그리드 테이블 구성
-      let html = `
-        <style>
-          .cal{border-collapse:collapse; width:100%; max-width:480px}
-          .cal th, .cal td{border:1px solid #ddd; padding:8px; text-align:center}
-          .cal th{background:#f8f8f8}
-          .cal td.muted{color:#bbb}
-          .cal td.checked{background:#e6ffe6; font-weight:600}
-          .legend{font-size:12px; color:#666; margin:6px 0 0 2px}
-        </style>
-        <div><b>${yyyyMm}</b></div>
-        <table class="cal">
-          <thead><tr>
-            <th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th>
-          </tr></thead><tbody>
-      `;
-
-      let d = 1;
-      const rows = Math.ceil((startW + last.getDate())/7);
-      for(let r=0;r<rows;r++){
-        html += '<tr>';
-        for(let c=0;c<7;c++){
-          const cellIndex = r*7 + c;
-          const isCurrent = cellIndex>=startW && d<=last.getDate();
-          if(!isCurrent){
-            html += `<td class="muted"> </td>`;
-          }else{
-            const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-            const isChecked = checkedMap.get(dateStr);
-            html += `<td class="${isChecked?'checked':''}" title="${dateStr}">
-                       <div>${d}</div>
-                     </td>`;
-            d++;
-          }
-        }
-        html += '</tr>';
-      }
-      html += `</tbody></table>
-               <div class="legend">초록색: 출석(O)</div>`;
-
-      host.innerHTML = html;
-    }
-
-    function clearToken(){ setToken(''); }
-
-    async function startSession(){
-      const type = document.getElementById('gameType').value;
-      // 서버 로직에 맞춰 gameId, gameType 중 무엇을 받는지 확인해서 변경
-      // 예시: /sessions/start?type=COLOR_TAP
-      const res = await post('/sessions/start?type='+encodeURIComponent(type));
-      document.getElementById('sessionId').value = res.sessionId || res.id || '';
-    }
-
-    async function endSession(){
-      const id = document.getElementById('sessionId').value;
-      // 게임마다 payload 다르지만 샘플 값:
-      const payload = {
-        score: 10,
-        accuracy: 0.9,
-        meta: { demo:true }
-      };
-      const res = await post(`/sessions/${id}/end`, payload);
-      out(res);
-    }
-
-    async function download(path){
-      const jwt = getToken();
-      const res = await fetch(API + path, { headers: jwt? {Authorization:'Bearer '+jwt}: {} });
-      if(!res.ok){ out(await res.text()); return; }
-      const blob = await res.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'export.zip';
-      a.click();
-      URL.revokeObjectURL(a.href);
-      out('다운로드 시작');
-    }
-
-    async function verifyStub(){
-      const body = {
-        platform: "ANDROID",
-        productId: "sub_premium_monthly",
-        purchaseToken: "dev-token-"+Date.now(),
-        devMode: true
-      };
-      const res = await post('/subs/verify', body);
-      out(res);
-    }
-
-    function toggleTheme(){
-      const r = document.documentElement;
-      r.setAttribute('data-theme', r.getAttribute('data-theme') === 'high-contrast' ? '' : 'high-contrast');
-    }
-</script>
 </body>
 </html>

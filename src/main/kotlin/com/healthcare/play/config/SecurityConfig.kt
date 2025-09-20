@@ -27,7 +27,7 @@ class SecurityConfig(
             .authorizeHttpRequests {
                 // 정적 리소스 & 루트 허용
                 it.requestMatchers("/", "/index.html", "/favicon.ico",
-                    "/assets/**", "/css/**", "/service.js/**", "/images/**", "/webjars/**",
+                    "/assets/**", "/css/**", "/js/**", "/service.js/**", "/images/**", "/webjars/**",
                     "/ping", "/games/**", "/dev/**" ).permitAll()
 
                 // 공개 엔드포인트

@@ -1,6 +1,6 @@
 :root {
   --font-size-base: 18px;
-  --btn-size: 52px;           /* 터치 영역 44px 이상 권장 */
+  --btn-size: 52px;
   --radius: 14px;
   --gap: 12px;
 
@@ -19,7 +19,16 @@
   --muted: #aaa;
 }
 
-body { background: var(--bg); color: var(--fg); font-size: var(--font-size-base); }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-size: var(--font-size-base);
+  font-family: system-ui, sans-serif;
+  max-width: 900px;
+  margin: 24px auto;
+  line-height: 1.5;
+}
+
 button {
   min-height: var(--btn-size);
   min-width: 160px;
@@ -29,6 +38,7 @@ button {
   color: var(--fg);
   font-weight: 700;
   padding: 10px 14px;
+  cursor: pointer;
 }
 button.primary { background: var(--primary); color: #000; border-color: var(--primary); }
 button.danger  { background: var(--danger);  color: #000; border-color: var(--danger); }
@@ -36,3 +46,21 @@ button.danger  { background: var(--danger);  color: #000; border-color: var(--da
 .big { font-size: 1.2em; }
 .card { border:2px solid var(--fg); border-radius: var(--radius); padding:16px; margin-bottom:16px; }
 .row { display:flex; gap:var(--gap); flex-wrap:wrap; align-items:center; }
+.muted{ color: var(--muted); font-size: 12px; }
+
+pre {
+  background:#111;
+  color:#eee;
+  padding:12px;
+  border-radius:8px;
+  overflow:auto;
+  max-height:300px;
+}
+
+/* 캘린더 테이블 */
+.cal{border-collapse:collapse; width:100%; max-width:480px}
+.cal th, .cal td{border:1px solid #ddd; padding:8px; text-align:center}
+.cal th{background:#f8f8f8}
+.cal td.muted{color:#bbb}
+.cal td.checked{background:#e6ffe6; font-weight:600}
+.legend{font-size:12px; color:#666; margin:6px 0 0 2px}
