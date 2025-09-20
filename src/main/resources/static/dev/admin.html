@@ -38,9 +38,10 @@
     <h2>2) 출석</h2>
     <div class="row">
         <button onclick="attendanceCheck()">오늘 출석</button>
-        <input id="month" value="2025-09-19" />
-        <button onclick="get(`/attendance/calendar?month=${document.getElementById('month').value}`)">달력 조회</button>
+        <input id="month" value="2025-09" />
+        <button onclick="fetchCalendar()">달력 조회</button>
     </div>
+    <div id="calendar" style="margin-top:12px"></div>
 </div>
 
 <div class="card">
@@ -105,6 +106,7 @@
     const get = (p)=>req(p);
     const post = (p, data)=>req(p, { method:'POST', headers:{'Content-Type':'application/json'}, body: data? JSON.stringify(data): null });
 
+    // 가입(id/pw)
     async function signup(){
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
@@ -112,6 +114,7 @@
       setToken(res.token);
     }
 
+    // 로그인
     async function login(){
       console.log("login");
       const email = document.getElementById('email').value;
@@ -120,6 +123,7 @@
       setToken(res.token);
     }
 
+    // 출석체크
     async function attendanceCheck(){
       try {
         const res = await post('/attendance/check');
@@ -127,6 +131,67 @@
       } catch (e) {
         console.log(e)
       }
+    }
+
+    // 달력 조회
+    async function fetchCalendar(){
+      const v = document.getElementById('month').value; // "yyyy-MM"
+      const days = await get(`/attendance/calendar?month=${encodeURIComponent(v)}`);
+      renderCalendar(v, days);
+    }
+
+    // 달력 생성
+    function renderCalendar(yyyyMm, days){
+      const host = document.getElementById('calendar');
+      const [y, m] = yyyyMm.split('-').map(Number);   // e.g. 2025, 9
+      const first = new Date(y, m - 1, 1);
+      const last  = new Date(y, m, 0);                // 말일
+      const startW = first.getDay();                   // 0=Sun..6=Sat
+
+      // 응답을 빠르게 조회하기 위해 Map(date->checked)
+      const checkedMap = new Map(days.map(d => [d.date, !!d.checked]));
+
+      // 헤더 + 7칸 그리드 테이블 구성
+      let html = `
+        <style>
+          .cal{border-collapse:collapse; width:100%; max-width:480px}
+          .cal th, .cal td{border:1px solid #ddd; padding:8px; text-align:center}
+          .cal th{background:#f8f8f8}
+          .cal td.muted{color:#bbb}
+          .cal td.checked{background:#e6ffe6; font-weight:600}
+          .legend{font-size:12px; color:#666; margin:6px 0 0 2px}
+        </style>
+        <div><b>${yyyyMm}</b></div>
+        <table class="cal">
+          <thead><tr>
+            <th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th>
+          </tr></thead><tbody>
+      `;
+
+      let d = 1;
+      const rows = Math.ceil((startW + last.getDate())/7);
+      for(let r=0;r<rows;r++){
+        html += '<tr>';
+        for(let c=0;c<7;c++){
+          const cellIndex = r*7 + c;
+          const isCurrent = cellIndex>=startW && d<=last.getDate();
+          if(!isCurrent){
+            html += `<td class="muted"> </td>`;
+          }else{
+            const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const isChecked = checkedMap.get(dateStr);
+            html += `<td class="${isChecked?'checked':''}" title="${dateStr}">
+                       <div>${d}</div>
+                     </td>`;
+            d++;
+          }
+        }
+        html += '</tr>';
+      }
+      html += `</tbody></table>
+               <div class="legend">초록색: 출석(O)</div>`;
+
+      host.innerHTML = html;
     }
 
     function clearToken(){ setToken(''); }
