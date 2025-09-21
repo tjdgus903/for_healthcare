@@ -1,4 +1,3 @@
-<script>
 const store = {
   get token(){ return localStorage.getItem('jwt') },
   set token(v){ v?localStorage.setItem('jwt',v):localStorage.removeItem('jwt') }
@@ -35,4 +34,10 @@ async function login(email,pw){
 }
 function logout(){ store.token=null; toast('로그아웃됨'); location.href='/' }
 function requireAuth(){ if(!store.token){ toast('로그인이 필요합니다'); location.href='/login.html' } }
-</script>
+
+async function include(selector, url){
+  const host = document.querySelector(selector);
+  if(!host) return;
+  const html = await fetch(url).then(r=>r.text());
+  host.innerHTML = html;
+}

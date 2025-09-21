@@ -1,15 +1,11 @@
-<!doctype html><html lang="ko"><head>
+<!doctype html><html lang="ko">
+<head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="/css/app.css">
     <title>Healthcare</title>
-</head><body>
-<div class="navbar">
-    <div style="font-weight:900">Healthcare</div>
-    <div class="row">
-        <button onclick="toggleHC()">고대비</button>
-        <a href="/login.html"><button>로그인</button></a>
-    </div>
-</div>
+</head>
+<body>
+<div id="header"></div>
 
 <div class="container">
     <div class="card">
@@ -25,9 +21,16 @@
 
 <div class="tabs">…(footer.html 내용 붙여넣기)…</div>
 <div class="toast"></div>
+<div id="footer"></div>
 <script src="/js/app.js"></script>
 <script>
+    include('#header','/dev/header.html');
+    include('#footer','/dev/footer.html');
+</script>
+<script>
     // 로그인 상태에 따라 안내
-    if(localStorage.getItem('jwt')){ document.querySelector('#notice').textContent='로그인 상태입니다.'; }
+    if(localStorage.getItem('jwt')){
+        document.querySelector('#notice').textContent='로그인 상태입니다.';
+    }
 </script>
 </body></html>
