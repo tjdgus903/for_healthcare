@@ -1,261 +1,33 @@
-<!doctype html>
-<html lang="ko">
-<head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <title>Healthcare Test UI</title>
-    <style>
-        body { font-family: system-ui, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 12px; }
-        .card { border:1px solid #ddd; border-radius:12px; padding:16px; margin:12px 0; }
-        .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-        label { display:flex; gap:6px; align-items:center; }
-        input, select { padding:8px; border:1px solid #ccc; border-radius:8px; }
-        button { padding:8px 12px; border:1px solid #ccc; border-radius:8px; cursor:pointer; }
-        .grid { display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; margin-top:8px; }
-        .day { border:1px solid #eee; border-radius:8px; padding:10px; text-align:center; }
-        .checked { background:#e9f9ef; border-color:#b7ebc6; font-weight:600; }
-        pre { background:#f6f8fa; padding:10px; border-radius:8px; overflow:auto; }
-        small { color:#666; }
-    </style>
-</head>
-<body>
-<h1>Healthcare 테스트 화면</h1>
-
-<div class="card">
-    <h3>1) 로그인</h3>
+<!doctype html><html lang="ko"><head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="/css/app.css">
+    <title>Healthcare</title>
+</head><body>
+<div class="navbar">
+    <div style="font-weight:900">Healthcare</div>
     <div class="row">
-        <label>ID <input id="id" value="fhc"/></label>
-        <label>PW <input id="pw" value="fhc" type="password"/></label>
-        <button id="btnLogin">로그인</button>
-        <button id="btnRegist">간편가입</button>
-        <small id="loginStatus"></small>
+        <button onclick="toggleHC()">고대비</button>
+        <a href="/login.html"><button>로그인</button></a>
     </div>
-    <pre id="tokenPreview"></pre>
 </div>
 
-<div class="card">
-    <h3>2) 출석체크 / 달력</h3>
-    <div class="row">
-        <label>월(YYYY-MM) <input id="month" value="2025-09"/></label>
-        <button id="btnCheck">오늘 출석</button>
-        <button id="btnLoad">내 달력 조회</button>
-        <small id="attStatus"></small>
+<div class="container">
+    <div class="card">
+        <div class="grid">
+            <a href="/games/index.html"><button class="primary">🎮 게임 시작</button></a>
+            <a href="/attendance/index.html"><button>🗓 출석체크</button></a>
+            <a href="/reports/index.html"><button>📈 내 리포트</button></a>
+            <a href="/subs/index.html"><button>⭐ 구독/광고</button></a>
+        </div>
     </div>
-    <div id="calendar"></div>
+    <div id="notice" class="card">안내가 여기에 표시됩니다.</div>
 </div>
 
-<div class="card">
-    <h3>3) 링크(초대/수락) — 모두 ‘플레이어’이지만 권한을 링크로 위임</h3>
-    <div class="row">
-        <label>스코프
-            <select id="scope">
-                <option value="VIEW_REPORTS" selected>VIEW_REPORTS</option>
-                <option value="WRITE_NOTE">WRITE_NOTE</option>
-                <option value="MANAGE_LINK">MANAGE_LINK</option>
-            </select>
-        </label>
-        <label>만료(분) <input id="ttl" type="number" value="60" style="width:80px"/></label>
-        <button id="btnInvite">초대 코드 발급</button>
-        <small id="inviteStatus"></small>
-    </div>
-    <pre id="invitePreview"></pre>
-
-    <div class="row" style="margin-top:8px;">
-        <label>수락 코드 <input id="acceptCode" placeholder="발급받은 코드 입력"/></label>
-        <button id="btnAccept">코드 수락</button>
-        <small id="acceptStatus"></small>
-    </div>
-
-    <div class="row" style="margin-top:8px;">
-        <button id="btnOutgoing">내가 권한 준 목록</button>
-        <button id="btnIncoming">내가 권한 받은 목록</button>
-        <small id="listStatus"></small>
-    </div>
-    <pre id="linksPreview"></pre>
-</div>
-
-<div class="card">
-    <h3>4) (권한 테스트) 다른 사람의 달력 열람</h3>
-    <div class="row">
-        <label>Owner UUID <input id="ownerId" placeholder="상대방 UUID"/></label>
-        <label>월(YYYY-MM) <input id="otherMonth" value="2025-09"/></label>
-        <button id="btnLoadOther">상대 달력 조회</button>
-        <small id="otherStatus"></small>
-    </div>
-    <div id="otherCalendar"></div>
-</div>
-
+<div class="tabs">…(footer.html 내용 붙여넣기)…</div>
+<div class="toast"></div>
+<script src="/js/app.js"></script>
 <script>
-    let token = null;
-
-    function setText(id, text) { document.getElementById(id).textContent = text; }
-    function setHTML(id, html) { document.getElementById(id).innerHTML = html; }
-    function pretty(obj) { return JSON.stringify(obj, null, 2); }
-
-    async function api(path, options={}) {
-      const headers = options.headers || {};
-      if (token) headers['Authorization'] = 'Bearer ' + token;
-      headers['Content-Type'] = headers['Content-Type'] || 'application/json';
-      const res = await fetch(path, { ...options, headers });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(res.status + ' ' + res.statusText + ' :: ' + text);
-      }
-      const ct = res.headers.get('content-type') || '';
-      return ct.includes('application/json') ? res.json() : res.text();
-    }
-
-    // 간편 계정등록
-    document.getElementById('btnRegist').addEventListener('click', async () => {
-      try {
-        const id = document.getElementById('id').value;
-        const password = document.getElementById('pw').value;
-        const data = await api('/auth/signup', {
-          method: 'POST',
-          body: JSON.stringify({ id, password })
-        });
-        setText('loginStatus', '가입 성공');
-        setText('tokenPreview', pretty(data));
-      } catch (e) {
-        setText('loginStatus', '가입 실패: ' + e.message);
-        setText('tokenPreview', '');
-      }
-    });
-
-    // 로그인
-    document.getElementById('btnLogin').addEventListener('click', async () => {
-      try {
-        const id = document.getElementById('id').value;
-        const password = document.getElementById('pw').value;
-        const data = await api('/auth/login', {
-          method: 'POST',
-          body: JSON.stringify({ id, password })
-        });
-        token = data.accessToken;
-        setText('loginStatus', '로그인 성공');
-        setText('tokenPreview', pretty(data));
-      } catch (e) {
-        setText('loginStatus', '로그인 실패: ' + e.message);
-        setText('tokenPreview', '');
-      }
-    });
-
-    // 오늘 출석
-    document.getElementById('btnCheck').addEventListener('click', async () => {
-      try {
-        const data = await api('/attendance/check', { method: 'POST' });
-        setText('attStatus', `출석 처리: ${data.date} (연속 ${data.currentStreak}일)`);
-      } catch (e) {
-        setText('attStatus', '출석 실패: ' + e.message);
-      }
-    });
-
-    // 내 달력
-    document.getElementById('btnLoad').addEventListener('click', async () => {
-      try {
-        const ym = document.getElementById('month').value;
-        const days = await api('/attendance/calendar?month=' + encodeURIComponent(ym));
-        renderCalendar('calendar', ym, days);
-        setText('attStatus', '달력 로드 완료');
-      } catch (e) {
-        setText('attStatus', '달력 로드 실패: ' + e.message);
-      }
-    });
-
-    // 초대 발급
-    document.getElementById('btnInvite').addEventListener('click', async () => {
-      try {
-        const scope = document.getElementById('scope').value;
-        const ttl = parseInt(document.getElementById('ttl').value || '60', 10);
-        const data = await api('/links/invites', {
-          method: 'POST',
-          body: JSON.stringify({ scopes: [scope], ttlMinutes: ttl })
-        });
-        setText('inviteStatus', '발급 완료');
-        setText('invitePreview', pretty(data));
-        document.getElementById('acceptCode').value = data.code;
-      } catch (e) {
-        setText('inviteStatus', '발급 실패: ' + e.message);
-        setText('invitePreview', '');
-      }
-    });
-
-    // 초대 수락
-    document.getElementById('btnAccept').addEventListener('click', async () => {
-      try {
-        const code = document.getElementById('acceptCode').value.trim();
-        const data = await api('/links/accept', {
-          method: 'POST',
-          body: JSON.stringify({ code })
-        });
-        setText('acceptStatus', '수락 완료');
-        setText('linksPreview', pretty(data));
-      } catch (e) {
-        setText('acceptStatus', '수락 실패: ' + e.message);
-      }
-    });
-
-    // 아웃바운드(내가 권한 준 목록)
-    document.getElementById('btnOutgoing').addEventListener('click', async () => {
-      try {
-        const data = await api('/links/outgoing');
-        setText('linksPreview', pretty(data));
-        setText('listStatus', '조회 완료');
-      } catch (e) {
-        setText('listStatus', '조회 실패: ' + e.message);
-      }
-    });
-
-    // 인바운드(내가 권한 받은 목록)
-    document.getElementById('btnIncoming').addEventListener('click', async () => {
-      try {
-        const data = await api('/links/incoming');
-        setText('linksPreview', pretty(data));
-        setText('listStatus', '조회 완료');
-      } catch (e) {
-        setText('listStatus', '조회 실패: ' + e.message);
-      }
-    });
-
-    // 다른 사람 달력
-    document.getElementById('btnLoadOther').addEventListener('click', async () => {
-      try {
-        const ownerId = document.getElementById('ownerId').value.trim();
-        const ym = document.getElementById('otherMonth').value;
-        const days = await api(`/attendance/calendar/of/${ownerId}?month=${encodeURIComponent(ym)}`);
-        renderCalendar('otherCalendar', ym, days);
-        setText('otherStatus', '상대 달력 로드 완료');
-      } catch (e) {
-        setText('otherStatus', '상대 달력 로드 실패: ' + e.message);
-      }
-    });
-
-    function renderCalendar(rootId, ym, days) {
-      const root = document.getElementById(rootId);
-      root.innerHTML = '';
-      const title = document.createElement('h4');
-      title.textContent = ym + ' 달력';
-      root.appendChild(title);
-
-      const grid = document.createElement('div');
-      grid.className = 'grid';
-      ['일','월','화','수','목','금','토'].forEach(d => {
-        const h = document.createElement('div'); h.className='day'; h.style.fontWeight='700'; h.textContent=d; grid.appendChild(h);
-      });
-
-      const [year, month] = ym.split('-').map(Number);
-      const firstDay = new Date(year, month - 1, 1);
-      for (let i = 0; i < firstDay.getDay(); i++) grid.appendChild(document.createElement('div'));
-
-      days.forEach(d => {
-        const el = document.createElement('div');
-        el.className = 'day' + (d.checked ? ' checked' : '');
-        const date = new Date(d.date);
-        el.textContent = String(date.getDate());
-        grid.appendChild(el);
-      });
-      root.appendChild(grid);
-    }
+    // 로그인 상태에 따라 안내
+    if(localStorage.getItem('jwt')){ document.querySelector('#notice').textContent='로그인 상태입니다.'; }
 </script>
-</body>
-</html>
+</body></html>

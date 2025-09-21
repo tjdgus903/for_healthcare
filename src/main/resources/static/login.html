@@ -1,0 +1,25 @@
+<!doctype html><html lang="ko"><head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="/css/app.css"><title>로그인</title>
+</head><body>
+<div class="navbar"><div style="font-weight:900">Healthcare</div></div>
+<div class="container">
+    <div class="card">
+        <h2>로그인</h2>
+        <div class="row">
+            <input id="email" placeholder="이메일" style="font-size:1.1em;padding:12px;border-radius:12px;border:2px solid var(--fg);width:280px">
+            <input id="pw" type="password" placeholder="비밀번호" style="font-size:1.1em;padding:12px;border-radius:12px;border:2px solid var(--fg);width:280px">
+            <button class="primary" onclick="doLogin()">로그인</button>
+        </div>
+    </div>
+</div>
+<div class="tabs">…</div><div class="toast"></div>
+<script src="/js/app.js"></script>
+<script>
+    async function doLogin(){
+      const email=document.getElementById('email').value.trim();
+      const pw=document.getElementById('pw').value;
+      try{ await login(email,pw); location.href='/index.html'; }catch(e){}
+    }
+</script>
+</body></html>
