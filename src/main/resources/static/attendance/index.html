@@ -1,0 +1,32 @@
+<!doctype html><html lang="ko"><head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="/css/app.css"><title>출석</title>
+</head><body onload="requireAuth()">
+<div id="header"></div>
+<div class="container">
+    <div class="card">
+        <h2>오늘 출석</h2>
+        <button class="primary" onclick="checkIn()">✔️ 출석 체크</button>
+    </div>
+    <div class="card">
+        <h2>달력</h2>
+        <div class="row">
+            <input id="ym" value="2025-09" style="font-size:1.1em;padding:10px;border:2px solid var(--fg);border-radius:12px">
+            <button onclick="loadCal()">불러오기</button>
+        </div>
+        <pre id="out" style="white-space:pre-wrap"></pre>
+    </div>
+</div>
+<div id="footer"></div><div class="toast"></div>
+<script src="/js/app.js"></script>
+<script>
+    include('#header','/dev/header.html'); include('#footer','/dev/footer.html');
+
+    async function checkIn(){ out(await api('/attendance/check',{method:'POST'})); }
+    async function loadCal(){
+      const ym = document.getElementById('ym').value;
+      out(await api('/attendance/calendar?month='+encodeURIComponent(ym)));
+    }
+    function out(data){ document.getElementById('out').textContent=JSON.stringify(data,null,2); }
+</script>
+</body></html>

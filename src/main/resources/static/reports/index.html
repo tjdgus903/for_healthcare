@@ -1,0 +1,20 @@
+<!doctype html><html lang="ko"><head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="/css/app.css"><title>리포트</title>
+</head><body onload="requireAuth()">
+<div id="header"></div>
+<div class="container">
+    <div class="card">
+        <h2>내 최근 세션</h2>
+        <button class="primary" onclick="load()">불러오기</button>
+        <pre id="out" style="white-space:pre-wrap"></pre>
+    </div>
+</div>
+<div id="footer"></div><div class="toast"></div>
+<script src="/js/app.js"></script>
+<script>
+    include('#header','/dev/header.html'); include('#footer','/dev/footer.html');
+    async function load(){ out(await api('/reports/me')); }
+    function out(data){ document.getElementById('out').textContent=JSON.stringify(data,null,2); }
+</script>
+</body></html>
