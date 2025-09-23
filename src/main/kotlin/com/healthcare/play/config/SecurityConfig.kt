@@ -28,7 +28,7 @@ class SecurityConfig(
                 // 정적 리소스 & 루트 허용
                 it.requestMatchers("/", "/index.html", "/login.html", "/favicon.ico",
                     "/assets/**", "/css/**", "/js/**", "/service.js/**", "/images/**", "/webjars/**",
-                    "/ping", "/games/**", "/dev/**" ).permitAll()
+                    "/ping", "/games/**", "/attendance/**", "/images/**", "/reports/**", "/subs/**", "/dev/**" ).permitAll()
 
                 // 공개 엔드포인트
                 it.requestMatchers("/auth/**",
