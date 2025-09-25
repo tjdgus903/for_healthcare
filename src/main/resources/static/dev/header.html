@@ -1,8 +1,20 @@
 <div class="navbar">
     <div style="font-weight:900">Healthcare</div>
-    <div class="row">
+    <div class="row" style="gap:8px; align-items:center">
+        <!-- 로그인 후 계정 표시 영역 -->
+        <span id="account" class="need-auth" style="display:none; font-weight:700;"></span>
+
         <button onclick="toggleHC()">고대비</button>
-        <a href="/login.html"><button>로그인</button></a>
+
+        <!-- 비로그인 때만 보이는 로그인 버튼 -->
+        <a class="need-guest" href="/login.html"><button>로그인</button></a>
+
+        <!-- 로그인 때만 보이는 로그아웃 버튼 -->
         <button class="need-auth" style="display:none" onclick="logout()">로그아웃</button>
     </div>
 </div>
+
+<!-- 파셜이 include된 뒤 즉시 UI 동기화 -->
+<script>
+    if (typeof applyAuthUI === 'function') applyAuthUI();
+</script>
