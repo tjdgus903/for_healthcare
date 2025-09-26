@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(pageTitle, content)">
+<head th:replace="fragments/head :: commonHead(${pageTitle})"></head>
+<body>
+<div th:replace="partials/header :: header"></div>
+<main id="main" class="container-xxl py-3">
+    <div th:insert="${content}"></div>
+</main>
+<div th:replace="partials/footer :: footer"></div>
+</body>
+</html>

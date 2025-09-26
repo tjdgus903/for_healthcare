@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="commonHead(title)">
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${title} ?: 'NeuroCare Play'">NeuroCare Play</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 공통 정적 리소스 -->
+    <link th:href="@{/css/app.css}" rel="stylesheet"/>
+    <link rel="icon" th:href="@{/favicon.ico}"/>
+
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/frontend.js}"></script>
+    <script th:src="@{/js/layout.js}"></script>
+</th:block>
+</html>

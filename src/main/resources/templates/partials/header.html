@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="header">
+    <header id="appHeader" class="navbar navbar-expand fixed-top bg-white border-bottom shadow-sm">
+        <div class="container-xxl">
+            <a class="navbar-brand d-flex align-items-center gap-2" th:href="@{/}" aria-label="NeuroCare Play 홈으로">
+                <span class="d-inline-flex rounded-3 px-2 py-1 fw-bold text-white" style="background:#1e88e5;">NC</span>
+                <span class="fw-bold">NeuroCare Play</span>
+                <small class="text-muted d-none d-sm-inline">인지·운동 훈련을 쉽게, 즐겁게</small>
+            </a>
+
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                <!-- 로그인 후 계정 표시: 초기 숨김 -->
+                <span id="account" class="badge text-bg-light need-auth fw-semibold px-3 py-2"
+                      style="display:none" title=""></span>
+
+                <!-- 고대비 토글 (app.js의 toggleHC 사용) -->
+                <button type="button" class="btn btn-outline-secondary fw-bold" onclick="toggleHC()">고대비</button>
+
+                <!-- 비로그인 전용: 기본 표시 -->
+                <a class="need-guest" th:href="@{/login}">
+                    <button type="button" class="btn btn-primary fw-bold">로그인</button>
+                </a>
+
+                <!-- 로그인 전용: 초기 숨김 -->
+                <button type="button" class="btn btn-outline-primary fw-bold need-auth"
+                        style="display:none" onclick="logout()">로그아웃</button>
+            </div>
+        </div>
+
+        <!-- include/SSR 후 즉시 상태 반영 -->
+        <script>
+            (typeof applyAuthUI==='function') && applyAuthUI();
+            setTimeout(()=>window.__adjustLayout&&window.__adjustLayout(),0);
+        </script>
+    </header>
+</div>
+</html>

@@ -11,6 +11,18 @@ spring:
   sql:
     init:
       mode: never     # schema.sql/data.sql 자동실행 방지
+  thymeleaf:
+    cache: false       # 개발 중 캐시 끄기
+    prefix: classpath:/templates/
+    suffix: .html
+    web:
+      resources:
+        cache:
+          period: 0
+  server:
+    error:
+      include-message: always
+
 logging:
   level:
     org.hibernate.SQL: info

@@ -77,7 +77,7 @@ function renderCalendar(yyyyMm, days) {
       const cellIndex = r * 7 + c;
       const isCurrent = cellIndex >= startW && d <= last.getDate();
       if (!isCurrent) {
-        html += `<td class="muted"> </td>`;
+        html += `<td class="muted"><div>&nbsp;</div></td>`;
       } else {
         const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const isChecked = checkedMap.get(dateStr);

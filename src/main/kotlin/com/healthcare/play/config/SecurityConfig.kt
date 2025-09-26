@@ -28,13 +28,17 @@ class SecurityConfig(
                 // 정적 리소스 & 루트 허용
                 it.requestMatchers("/", "/index.html", "/login.html", "/favicon.ico",
                     "/assets/**", "/css/**", "/js/**", "/service.js/**", "/images/**", "/webjars/**",
-                    "/ping", "/games/**", "/attendance/**", "/images/**", "/reports/**", "/subs/**", "/dev/**" ).permitAll()
+                    "/ping", "/games/**", "/attendance/**", "/images/**", "/reports/**", "/subs/**", "/dev/**",
+                    "*"
+                ).permitAll()
 
                 // 공개 엔드포인트
                 it.requestMatchers("/auth/**",
                     "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
                     "/h2-console/**",
-                    "/actuator/health").permitAll()
+                    "/actuator/health",
+                    "*"
+                ).permitAll()
 
                 // 출석 API는 인증 필요 (단, GET 달력 조회만 공개라면 아래처럼 분리)
                 // it.requestMatchers(HttpMethod.GET, "/attendance/calendar").permitAll()
