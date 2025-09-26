@@ -1,7 +1,30 @@
-<div class="tabs">
-    <div class="tab"><a href="/index.html">홈</a></div>
-    <div class="tab"><a href="/games/index.html">게임</a></div>
-    <div class="tab"><a href="/attendance/index.html">출석</a></div>
-    <div class="tab"><a href="/reports/index.html">리포트</a></div>
-    <div class="tab"><a href="/subs/index.html">구독</a></div>
-</div>
+<footer class="app-footer" role="contentinfo">
+    <style>
+        .app-footer{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--border)}
+        .tabs{max-width:1040px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:6px 8px;gap:8px}
+        .tab a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-decoration:none;height:64px;min-width:72px;border-radius:14px;padding:8px 10px;font-weight:800;color:var(--fg);border:2px solid transparent}
+        .tab a .ico{font-size:20px;line-height:1}
+        .tab a.active{background:#f4f7fb;border-color:var(--primary)}
+        [data-theme="hc"] .tab a.active{background:#111}
+        @media (max-width:520px){.tabs{justify-content:space-around}.tab a{min-width:auto;flex:1}}
+    </style>
+    <nav class="tabs" aria-label="하단 네비게이션">
+        <div class="tab"><a data-path="/index.html" href="/index.html"><span class="ico" aria-hidden="true">🏠</span><span>홈</span></a></div>
+        <div class="tab"><a data-path="/games" href="/games/index.html"><span class="ico" aria-hidden="true">🎮</span><span>게임</span></a></div>
+        <div class="tab"><a data-path="/attendance" href="/attendance/index.html"><span class="ico" aria-hidden="true">✅</span><span>출석</span></a></div>
+        <div class="tab"><a data-path="/reports" href="/reports/index.html"><span class="ico" aria-hidden="true">📈</span><span>리포트</span></a></div>
+        <div class="tab"><a data-path="/subs" href="/subs/index.html"><span class="ico" aria-hidden="true">⭐</span><span>구독</span></a></div>
+    </nav>
+    <script>
+        (function(){
+        // 현재 위치 활성화 표시 (URL path 기준 전방일치)
+        const p = location.pathname;
+        document.querySelectorAll('.tabs a').forEach(a=>{
+        const key=a.getAttribute('data-path');
+        if(key==='/index.html'){
+        if(p==='/'||p.endsWith('/index.html')) a.classList.add('active');
+        }else if(p.startsWith(key)) a.classList.add('active');
+        });
+        })();
+    </script>
+</footer>

@@ -1,32 +1,47 @@
-<!doctype html><html lang="ko"><head>
-    <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <link rel="stylesheet" href="/css/app.css"><title>출석</title>
-</head><body onload="requireAuth()">
+<!-- ======================================= -->
+<!-- FILE: /attendance/index.html (출석) -->
+<!-- ======================================= -->
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>NeuroCare Play · 출석</title>
+    <style>
+        body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--fg);margin:0}
+        .container{max-width:1040px;margin:16px auto;padding:0 16px}
+        .card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+        [data-theme="hc"] .card{background:#000}
+        .big-btn{height:64px;min-width:160px;padding:0 18px;border-radius:16px;border:2px solid var(--primary);background:var(--primary);color:var(--primary-contrast);font-weight:900;font-size:18px;cursor:pointer}
+        input{height:56px;padding:8px 12px;border-radius:12px;border:2px solid var(--border);font-size:18px}
+        .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+        table.cal{width:100%;border-collapse:separate;border-spacing:0 6px}
+        table.cal th,table.cal td{text-align:center;padding:10px;border-radius:8px}
+        table.cal td.checked{background:#e6f4ea;border:2px solid #1b5e20}
+    </style>
+    <script src="/js/app.js"></script>
+    <script src="/js/frontend.js"></script>
+    <script>requireAuth && requireAuth()</script>
+</head>
+<body>
 <div id="header"></div>
-<div class="container">
-    <div class="card">
-        <h2>오늘 출석</h2>
-        <button class="primary" onclick="checkIn()">✔️ 출석 체크</button>
-    </div>
-    <div class="card">
-        <h2>달력</h2>
-        <div class="row">
-            <input id="ym" value="2025-09" style="font-size:1.1em;padding:10px;border:2px solid var(--fg);border-radius:12px">
-            <button onclick="loadCal()">불러오기</button>
-        </div>
-        <pre id="out" style="white-space:pre-wrap"></pre>
-    </div>
-</div>
-<div id="footer"></div><div class="toast"></div>
-<script src="/js/app.js"></script>
-<script>
-    include('#header','/dev/header.html'); include('#footer','/dev/footer.html');
+<script>include('#header','/dev/header.html')</script>
 
-    async function checkIn(){ out(await api('/attendance/check',{method:'POST'})); }
-    async function loadCal(){
-      const ym = document.getElementById('ym').value;
-      out(await api('/attendance/calendar?month='+encodeURIComponent(ym)));
-    }
-    function out(data){ document.getElementById('out').textContent=JSON.stringify(data,null,2); }
-</script>
-</body></html>
+
+<main class="container">
+    <section class="card">
+        <div class="row">
+            <button id="btnAttendanceCheck" class="big-btn">오늘 출석 체크</button>
+            <label for="month" style="font-weight:900">월 선택</label>
+            <input id="month" type="month" value="2025-09"/>
+            <button id="btnFetchCalendar" class="big-btn" style="height:56px">달력 불러오기</button>
+        </div>
+        <div id="calendar" style="margin-top:12px"></div>
+        <pre id="out" style="white-space:pre-wrap"></pre>
+    </section>
+</main>
+
+
+<div id="footer"></div>
+<script>include('#footer','/dev/footer.html')</script>
+</body>
+</html>

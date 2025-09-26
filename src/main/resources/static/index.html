@@ -1,42 +1,68 @@
-<!doctype html><html lang="ko">
+<!-- ============================= -->
+<!-- FILE: /index.html (홈) -->
+<!-- ============================= -->
+<!doctype html>
+<html lang="ko">
 <head>
-    <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <link rel="stylesheet" href="/css/app.css">
-    <title>Healthcare</title>
+    <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>NeuroCare Play · 홈</title>
+    <style>
+        body{font-family:system-ui,Segoe UI,Apple SD Gothic Neo,Pretendard,sans-serif;background:var(--bg);color:var(--fg);margin:0}
+        .container{max-width:1040px;margin:16px auto;padding:0 16px}
+        .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+        .card{grid-column:span 12;background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+        [data-theme="hc"] .card{background:#000}
+        .card h2{margin:0 0 8px;font-size:22px}
+        .action{display:flex;gap:12px;flex-wrap:wrap}
+        .big-btn{height:72px;min-width:200px;padding:0 18px;border-radius:16px;border:2px solid var(--primary);background:var(--primary);color:var(--primary-contrast);font-size:20px;font-weight:900;cursor:pointer}
+        .secondary{background:transparent;color:var(--primary)}
+        .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+        table.cal{width:100%;border-collapse:separate;border-spacing:0 6px}
+        table.cal th,table.cal td{text-align:center;padding:10px;border-radius:8px}
+        table.cal td.checked{background:#e6f4ea;border:2px solid #1b5e20}
+        table.cal td.muted{color:#999}
+        label{font-weight:800}
+        input,select{height:56px;padding:8px 12px;border-radius:12px;border:2px solid var(--border);font-size:18px}
+        .muted{color:var(--muted)}
+    </style>
+    <script src="/js/app.js"></script>
+    <script src="/js/frontend.js"></script>
 </head>
 <body>
 <div id="header"></div>
+<script>include('#header','/dev/header.html')</script>
 
-<div class="container">
-    <div class="card">
-        <div class="grid">
-            <a href="/games/index.html"><button class="primary">🎮 게임 시작</button></a>
-            <a href="/attendance/index.html"><button>🗓 출석체크</button></a>
-            <a href="/reports/index.html"><button>📈 내 리포트</button></a>
-            <a href="/subs/index.html"><button>⭐ 구독/광고</button></a>
+
+<main class="container" aria-live="polite">
+    <section class="card" aria-labelledby="quick-start">
+        <h2 id="quick-start">오늘의 훈련</h2>
+        <div class="action">
+            <a href="/games/index.html"><button class="big-btn">▶ 게임 시작</button></a>
+            <button id="btnAttendanceCheck" class="big-btn secondary">출석 체크</button>
         </div>
-    </div>
-    <div id="notice" class="card">안내가 여기에 표시됩니다.</div>
-</div>
+        <p class="muted">큰 버튼을 눌러 바로 시작하세요. 보호자와 함께하면 더 좋아요.</p>
+    </section>
 
-<div class="tabs">…(footer.html 내용 붙여넣기)…</div>
-<div class="toast"></div>
+
+    <section class="card" aria-labelledby="calendar-sec">
+        <h2 id="calendar-sec">출석 달력</h2>
+        <div class="row">
+            <label for="month">월 선택</label>
+            <input id="month" type="month" value="2025-09" aria-label="출석 월 선택"/>
+            <button id="btnFetchCalendar" class="big-btn secondary" style="height:56px">불러오기</button>
+        </div>
+        <div id="calendar" style="margin-top:12px"></div>
+    </section>
+
+
+    <section class="card" aria-labelledby="status-sec">
+        <h2 id="status-sec">상태</h2>
+        <pre id="out" style="white-space:pre-wrap"></pre>
+    </section>
+</main>
+
+
 <div id="footer"></div>
-<script src="/js/app.js"></script>
-<script>
-    (async () => {
-      // 헤더/푸터를 먼저 include
-      await include('#header','/dev/header.html');
-      await include('#footer','/dev/footer.html');
-
-      // 헤더 DOM이 삽입된 후 상태 반영
-      applyAuthUI();
-    })();
-</script>
-<script>
-    // 로그인 상태에 따라 안내
-    if(localStorage.getItem('jwt')){
-        document.querySelector('#notice').textContent='로그인 상태입니다.';
-    }
-</script>
-</body></html>
+<script>include('#footer','/dev/footer.html')</script>
+</body>
+</html>

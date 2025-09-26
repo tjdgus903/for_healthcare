@@ -1,20 +1,57 @@
-<div class="navbar">
-    <div style="font-weight:900">Healthcare</div>
-    <div class="row" style="gap:8px; align-items:center">
-        <!-- 로그인 후 계정 표시 영역 -->
-        <span id="account" class="need-auth" style="display:none; font-weight:700;"></span>
-
-        <button onclick="toggleHC()">고대비</button>
-
-        <!-- 비로그인 때만 보이는 로그인 버튼 -->
-        <a class="need-guest" href="/login.html"><button>로그인</button></a>
-
-        <!-- 로그인 때만 보이는 로그아웃 버튼 -->
-        <button class="need-auth" style="display:none" onclick="logout()">로그아웃</button>
+<!-- ============================= -->
+<!-- FILE: /dev/header.html -->
+<!-- ============================= -->
+<header class="app-header" role="banner">
+    <style>
+        :root {
+        --bg: #ffffff; --fg: #1a1a1a; --muted: #5b5b5b; --primary: #1e88e5; --primary-contrast: #ffffff;
+        --border: #e6e6e6; --focus: #ff9800; --btn-h: 64px; --radius: 16px; --shadow: 0 4px 14px rgba(0,0,0,.06);
+        --font-size: 18px;
+        }
+        [data-theme="hc"] { --bg: #000; --fg: #fff; --muted: #bebebe; --primary: #ffff00; --primary-contrast: #000; --border: #333; --focus: #00e5ff; }
+        .app-header{position:sticky;top:0;z-index:1000;background:var(--bg);color:var(--fg);border-bottom:1px solid var(--border);box-shadow:var(--shadow)}
+        .app-header .wrap{max-width:1040px;margin:0 auto;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+        .brand{display:flex;align-items:center;gap:12px;font-weight:900;letter-spacing:.2px;text-decoration:none;color:inherit}
+        .brand-badge{width:44px;height:44px;border-radius:12px;background:var(--primary);color:var(--primary-contrast);display:grid;place-items:center;font-weight:900;font-size:20px}
+        .brand-name{display:flex;flex-direction:column;line-height:1.1}
+        .brand-name strong{font-size:20px}
+        .brand-name span{font-size:14px;color:var(--muted)}
+        .actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+        .btn{height:var(--btn-h);min-width:120px;padding:0 18px;border-radius:var(--radius);border:2px solid var(--primary);background:var(--primary);color:var(--primary-contrast);font-size:var(--font-size);font-weight:700;cursor:pointer}
+        .btn.secondary{background:transparent;color:var(--primary)}
+        .toggle{height:var(--btn-h);display:inline-flex;align-items:center;gap:10px;padding:0 16px;border-radius:var(--radius);border:2px solid var(--border);background:transparent;color:var(--fg);font-size:var(--font-size);font-weight:700;cursor:pointer}
+        .toggle .dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--fg);background:transparent}
+        .account{display:inline-flex;align-items:center;gap:10px;height:var(--btn-h);padding:0 12px;border-radius:var(--radius);border:2px dashed var(--border);background:transparent;font-size:var(--font-size);font-weight:800}
+        @media (max-width:520px){.btn,.toggle,.account{min-width:100%}.brand-name span{display:none}}
+        .app-header :focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+    </style>
+    <div class="wrap">
+        <a href="/" class="brand" aria-label="NeuroCare Play 홈으로 이동">
+            <div class="brand-badge" aria-hidden="true">NC</div>
+            <div class="brand-name"><strong>NeuroCare Play</strong><span>인지·운동 훈련을 쉽게, 즐겁게</span></div>
+        </a>
+        <nav class="actions" aria-label="상단 작업">
+            <!-- 로그인 후 계정 표시 (app.js applyAuthUI가 textContent를 채움) -->
+            <span id="account" class="account need-auth" style="display:none" title="" aria-live="polite"></span>
+            <!-- 고대비 토글: app.js의 toggleHC() 사용 -->
+            <button id="hcBtn" class="toggle" type="button" onclick="toggleHC()" aria-label="고대비 모드 전환">
+                <span class="dot" aria-hidden="true"></span><span>고대비</span>
+            </button>
+            <!-- 비로그인 때만 보이는 로그인 버튼 -->
+            <a class="need-guest" href="/login.html" style="text-decoration:none"><button type="button" class="btn">로그인</button></a>
+            <!-- 로그인 때만 보이는 로그아웃 버튼 (app.js.logout 사용) -->
+            <button class="btn secondary need-auth" style="display:none" type="button" onclick="logout()">로그아웃</button>
+        </nav>
     </div>
-</div>
-
-<!-- 파셜이 include된 뒤 즉시 UI 동기화 -->
-<script>
-    if (typeof applyAuthUI === 'function') applyAuthUI();
-</script>
+    <script>
+        // 헤더 부작용 최소화: app.js의 함수들을 신뢰하고, 여기서는 테마 초기값만 적용
+        (function(){
+            try{
+                if(localStorage.getItem('hc')==='1'){
+                    document.documentElement.setAttribute('data-theme','hc'); }
+                }catch(e){
+                }
+            if(typeof applyAuthUI==='function') applyAuthUI();
+        })();
+    </script>
+</header>
