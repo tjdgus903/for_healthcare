@@ -20,38 +20,48 @@ class SecurityConfig(
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .csrf { it.disable() }
             .cors(withDefaults())
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
 
-            .authorizeHttpRequests {
-                // 정적 리소스 & 루트 허용
-                it.requestMatchers("/", "/index.html", "/login.html", "/favicon.ico",
-                    "/assets/**", "/css/**", "/js/**", "/service.js/**", "/images/**", "/webjars/**",
-                    "/ping", "/games/**", "/attendance/**", "/images/**", "/reports/**", "/subs/**", "/dev/**",
-                    "*"
-                ).permitAll()
+            .authorizeHttpRequests { auth ->
+                auth
+                    // ---------- 공개 리소스 & 페이지 ----------
+                    .requestMatchers(
+                        "/", "/index", "/index.html",
+                        "/login", "/login.html",
+                        "/favicon.ico",
+                        "/assets/**", "/css/**", "/js/**", "/images/**", "/webjars/**", "/service.js/**",
+                        "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
+                        "/h2-console/**",
+                        "/actuator/health",
+                        "/ping",
+                        // 템플릿 '페이지' 라우트는 열어둠 (페이지는 열리지만, 내부 API는 별도 인증)
+                        "/games", "/attendance", "/reports", "/subs"
+                    ).permitAll()
 
-                // 공개 엔드포인트
-                it.requestMatchers("/auth/**",
-                    "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
-                    "/h2-console/**",
-                    "/actuator/health",
-                    "*"
-                ).permitAll()
+                    // ---------- 인증/발급 관련 공개 엔드포인트 ----------
+                    .requestMatchers("/auth/**").permitAll()
 
-                // 출석 API는 인증 필요 (단, GET 달력 조회만 공개라면 아래처럼 분리)
-                // it.requestMatchers(HttpMethod.GET, "/attendance/calendar").permitAll()
-                it.requestMatchers("/attendance/**").authenticated()
+                    // ---------- 보호할 API (여기 중요!) ----------
+                    // 페이지(/attendance)는 permitAll이지만, 하위 API(/attendance/**)는 인증 필요
+                    .requestMatchers(
+                        "/attendance/**",    // 예: /attendance/calendar, /attendance/check
+                        "/sessions/**",      // 예: /sessions/start, /sessions/{id}/end
+                        "/reports/**",       // 예: /reports/me
+                        "/privacy/**",       // 예: /privacy/consents, /privacy/export.zip
+                        "/subs/**",          // 예: /subs/status, /subs/verify
+                        "/ads/**"            // 예: /ads/config (필요시 조정)
+                    ).authenticated()
 
-                // 그 외는 인증 필요
-                it.anyRequest().authenticated()
+                    // ---------- 그 외 ----------
+                    .anyRequest().permitAll() // 새 페이지/리소스는 기본 공개(필요 시 .authenticated()로 변경)
             }
 
-            // H2 콘솔 프레임 허용
+            // H2 콘솔 프레임 허용(개발용)
             .headers { it.frameOptions { fo -> fo.disable() } }
 
-            // JWT 필터 삽입
+            // JWT 필터 삽입 (UsernamePasswordAuthenticationFilter 앞)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()
