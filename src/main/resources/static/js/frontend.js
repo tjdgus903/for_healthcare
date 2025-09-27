@@ -98,6 +98,8 @@ async function doLogin() {
   const password = document.getElementById('password').value;
   const res = await post('/auth/login', { email, password });
   setToken(res.token);
+
+  await login(email, password);
 }
 
 async function doSignup() {

@@ -28,10 +28,11 @@
             </div>
         </div>
 
-        <!-- include/SSR 후 즉시 상태 반영 -->
         <script>
-            (typeof applyAuthUI==='function') && applyAuthUI();
-            setTimeout(()=>window.__adjustLayout&&window.__adjustLayout(),0);
+            window.addEventListener('DOMContentLoaded', function () {
+                if (typeof applyAuthUI === 'function') applyAuthUI();
+                if (typeof window.__adjustLayout === 'function') window.__adjustLayout();
+            });
         </script>
     </header>
 </div>
