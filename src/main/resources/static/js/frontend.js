@@ -92,6 +92,15 @@ function renderCalendar(yyyyMm, days) {
   host.innerHTML = html;
 }
 
+function updateAttendanceButtonState() {
+  const btn = document.getElementById('btnAttendanceCheck');
+  if (btn) btn.disabled = !getToken();
+}
+document.addEventListener('DOMContentLoaded', updateAttendanceButtonState);
+window.addEventListener('storage', (e) => {
+  if (e.key === 'jwt') updateAttendanceButtonState();
+});
+
 // ====== API 호출 동작 ======
 async function doLogin() {
   const email = document.getElementById('email').value.trim();
@@ -110,14 +119,28 @@ async function doSignup() {
 }
 
 async function attendanceCheck() {
+  if (!getToken()) { out('로그인 후 출석 체크를 할 수 있어요.'); return; }
   await post('/attendance/check');
   await fetchCalendar(); // 체크 후 갱신
 }
 
 async function fetchCalendar() {
   const v = document.getElementById('month').value; // yyyy-MM
-  const days = await get(`/attendance/calendar?month=${encodeURIComponent(v)}`);
-  renderCalendar(v, days);
+
+  // 비로그인: API 호출 없이 달력만 그림(체크 없음)
+  if (!getToken()) {
+    renderCalendar(v, []); // checkedMap이 비어 있으므로 빈 달력
+    out('로그인하면 출석 표시가 함께 보여요.');
+    return;
+  }
+
+  // 로그인: 서버에서 출석 데이터 받아 렌더
+  try {
+    const days = await get(`/attendance/calendar?month=${encodeURIComponent(v)}`);
+    renderCalendar(v, days);
+  } catch (e) {
+    out('달력을 불러오지 못했습니다.');
+  }
 }
 
 function clearToken() { setToken(''); }
