@@ -33,7 +33,11 @@ class SessionController(
         @AuthenticationPrincipal principal: AuthPrincipal,
         @RequestBody @Valid req: StartSessionRequest
     ): ResponseEntity<StartSessionResponse> {
+        print("req : ")
+        println(req.gameType)
         val s = sessions.start(principal.userId, req.gameType, req.meta)
+        print("s : ")
+        println(s)
         return ResponseEntity.ok(StartSessionResponse(s.id!!, s.game.type, s.startedAt))
     }
 

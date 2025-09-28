@@ -145,9 +145,15 @@ async function fetchCalendar() {
 
 function clearToken() { setToken(''); }
 
-async function startSession() {
-  const type = document.getElementById('gameType').value;
-  const res = await post('/sessions/start?type=' + encodeURIComponent(type));
+async function startSession(typeValue){
+  const type = document.getElementById('gameType').value; // "COLOR_TAP"
+  const res = await api('/sessions/start', {
+    method: 'POST',
+    body: JSON.stringify({
+      gameType: type,   // ← 서버 DTO 필드명과 일치해야 함 (gameType)
+      // meta: { difficulty: 'EASY' } // 필요시
+    })
+  });
   document.getElementById('sessionId').value = res.sessionId || res.id || '';
 }
 
@@ -214,3 +220,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const monthEl = document.getElementById('month');
   if (monthEl && monthEl.value) fetchCalendar();
 });
+
+
+// 로그인 안 되어 있으면 막기(옵션)
+const isAuthed = () => !!getToken();
+
+// ★ 게임 시작: JSON body로 전송
+/*async function startSession() {
+  if (!isAuthed()) { out('로그인 후 시작할 수 있어요.'); return; }
+
+  const type = document.getElementById('gameType').value || 'COLOR_TAP';
+
+  // 서버 DTO가 'type' 인지 'gameType' 인지 애매하면 둘 다 보냄(무해)
+  const payload = { type, gameType: type };
+
+  const res = await post('/sessions/start', payload);  // ← 쿼리스트링 제거, body 추가
+  document.getElementById('sessionId').value = res.sessionId || res.id || '';
+  out('세션이 시작되었습니다.');
+}*/
