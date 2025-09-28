@@ -21,50 +21,19 @@ class GameSessionService(
     private val sessionRepo: GameSessionRepository,
     private val metricRepo: SessionMetricRepository,
 ) {
-    companion object {
-        private val log = LoggerFactory.getLogger(GameSessionService::class.java)
-    }
-
-    @PersistenceContext
-    private lateinit var em: EntityManager   // ← entityManager 주입
-
     private val zone = ZoneId.of("Asia/Seoul")
     private val M = jacksonObjectMapper()
 
     @Transactional
     fun start(userId: UUID, type: GameType, meta: Map<String, Any>? = null): GameSession {
-        // 앱이 "현재" 보고 있는 스키마/서치패스/테이블카운트 확인 (진단용)
-        @Suppress("UNCHECKED_CAST")
-        val row = em.createNativeQuery(
-            "select current_schema(), current_setting('search_path'), (select count(*) from game)"
-        ).singleResult as Array<*>
-        log.info("schema={}, search_path={}, game_count={}", row[0], row[1], row[2])
-
-        val who = em.createNativeQuery("select current_user, session_user").singleResult
-        log.info("user={}", who)
-
-        log.info("userId={}", userId)
-        log.info("requestedType={}", type.name)  // ← GameType(타입) 말고, type(값)을 찍기
-
-        print("1. ")
-        println(userId)
-        print("2. ")
-        println(GameType)
         val user = userRepo.findById(userId).orElseThrow()
-        print("3. ")
-        println(user)
         val game = gameRepo.findByType(type) ?: throw IllegalArgumentException("Game not found: $type")
-        //val game = gameRepo.findByType(type)
-        print("4. ")
-        println(game)
         val session = GameSession(
             user = user,
             game = game,
             startedAt = OffsetDateTime.now(zone),
             meta = meta?.let { M.writeValueAsString(it) }
         )
-        print("5. ")
-        println(session)
         return sessionRepo.save(session)
     }
 
