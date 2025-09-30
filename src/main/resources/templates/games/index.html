@@ -10,19 +10,22 @@
         <div class="col-12 col-md-6">
             <div class="card border-0 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between">
                 <div><h2 class="h5 fw-bold mb-1">컬러 탭</h2><div class="text-muted">같은 색을 빠르고 정확하게 탭</div></div>
-                <button class="btn btn-primary btn-lg fw-bold" onclick="document.getElementById('gameType').value='COLOR_TAP'; startSession('COLOR_TAP');">시작</button>
+                <!--<button class="btn btn-primary btn-lg fw-bold" onclick="document.getElementById('gameType').value='COLOR_TAP'; startSession('COLOR_TAP');">시작</button>-->
+                <a class="btn btn-primary btn-lg fw-bold" th:href="@{|/play?type=COLOR_TAP|}">시작</a>
             </div>
         </div>
         <div class="col-12 col-md-6">
             <div class="card border-0 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between">
                 <div><h2 class="h5 fw-bold mb-1">시퀀스 메모리</h2><div class="text-muted">순서대로 따라 탭</div></div>
-                <button class="btn btn-primary btn-lg fw-bold" onclick="document.getElementById('gameType').value='SEQUENCE_MEMORY'; startSession('SEQUENCE_MEMORY');">시작</button>
+                <!--<button class="btn btn-primary btn-lg fw-bold" onclick="document.getElementById('gameType').value='SEQUENCE_MEMORY'; startSession('SEQUENCE_MEMORY');">시작</button>-->
+                <a class="btn btn-primary btn-lg fw-bold" th:href="@{|/play?type=SEQUENCE_MEMORY|}">시작</a>
             </div>
         </div>
         <div class="col-12 col-md-6">
             <div class="card border-0 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between">
                 <div><h2 class="h5 fw-bold mb-1">매칭 퍼즐</h2><div class="text-muted">같은 그림을 맞춰요</div></div>
-                <button class="btn btn-primary btn-lg fw-bold" onclick="document.getElementById('gameType').value='SHAPE_MATCH'; startSession('SHAPE_MATCH');">시작</button>
+                <!--<button class="btn btn-primary btn-lg fw-bold" onclick="document.getElementById('gameType').value='SHAPE_MATCH'; startSession('SHAPE_MATCH');">시작</button>-->
+                <a class="btn btn-primary btn-lg fw-bold" th:href="@{|/play?type=SHAPE_MATCH|}">시작</a>
             </div>
         </div>
     </section>

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <title th:text="${'게임 플레이 - ' + gameType}">게임 플레이</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+<div th:replace="~{layout/base :: layout('게임 플레이', ~{::content})}"></div>
+
+<div id="content" th:fragment="content">
+    <section class="card border-0 shadow-sm p-3">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+            <div>
+                <div class="fw-bold">게임: <span id="gameTypeView" th:text="${gameType}">COLOR_TAP</span></div>
+                <div class="small text-muted">세션: <span id="sessionView">-</span></div>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" href="/game">목록</a>
+                <button id="btnEnd" class="btn btn-outline-primary">종료</button>
+            </div>
+        </div>
+        <div class="mt-2 d-flex gap-4">
+            <div>점수: <span id="scoreView">0</span></div>
+            <div>정확도: <span id="accView">0%</span></div>
+            <div>남은시간: <span id="timeView">0s</span></div>
+        </div>
+    </section>
+
+    <section class="card border-0 shadow-sm p-3 mt-3">
+        <div id="gameArea" style="min-height:260px"></div>
+        <pre id="log" class="mt-3 small text-muted"></pre>
+    </section>
+</div>
+
+<!-- 공통 유틸 -->
+<script src="/js/app.js"></script>
+<script src="/js/game-bridge.js"></script>
+
+<!-- 게임 로딩/세션 생성/종료 제어 -->
+<script type="module">
+    // type 쿼리 파라미터 보조(뒤로가기/새로고침 시 서버 값을 신뢰)
+    const typeEl = document.getElementById('gameTypeView');
+    const type = (typeEl?.textContent || '').trim(); // e.g. "COLOR_TAP"
+
+    if (!type) {
+      alert('게임 타입이 없습니다.');
+      location.href = '/game';
+    }
+
+    // 타입별 모듈 경로 매핑 — 새 게임 추가 시 여기에만 1줄 추가하면 됩니다.
+    function gameModulePath(t) {
+      switch (t) {
+        case 'COLOR_TAP':        return '/js/games/color-tap.js';
+        case 'SEQUENCE_MEMORY':  return '/js/games/sequence-memory.js';
+        case 'SHAPE_MATCH':      return '/js/games/shape-match.js';
+        default:                 return null;
+      }
+    }
+
+    // 점수/시간/로그 표시 헬퍼
+    const $ = (id) => document.getElementById(id);
+    const $score = $('scoreView'), $acc = $('accView'), $time = $('timeView'), $log = $('log'), $session = $('sessionView');
+
+    // 세션 복구 로직: 세션스토리지에 남아있으면 재사용(옵션)
+    async function ensureSession(type) {
+      const existing = sessionStorage.getItem('sessionId');
+      if (existing) {
+        try {
+          // 빠른 존재 확인(HEAD) — 서버에 엔드포인트 추가해두었음
+          const resp = await fetch(`/sessions/${existing}`, { method: 'HEAD', credentials: 'include' });
+          if (resp.ok) return existing;
+        } catch (_) { /* ignore */ }
+        sessionStorage.removeItem('sessionId');
+      }
+      // 새로 생성
+      const { sessionId } = await window.GameBridge.start(type);
+      return sessionId;
+    }
+
+    // 부트스트랩
+    (async () => {
+      try {
+        // 1) 게임 모듈 동적 로딩
+        const path = gameModulePath(type);
+        if (!path) { alert('아직 구현되지 않은 게임입니다.'); location.href='/game'; return; }
+        const mod = await import(path);
+        // default export 우선, 없다면 첫 키
+        const game = mod.default || mod[Object.keys(mod)[0]];
+        if (!game?.start) { alert('게임 모듈에 start가 없습니다.'); return; }
+
+        // 2) 세션 확보(복구 or 생성)
+        const sid = await ensureSession(type);
+        $session.textContent = sid;
+
+        // 3) 게임 시작
+        game.start(sid, {
+          onScore: (score, acc) => {
+            $score.textContent = String(score);
+            $acc.textContent = `${Math.round((acc || 0) * 100)}%`;
+          },
+          onTime: (sec) => { $time.textContent = `${sec}s`; },
+          onEnd: async (payload) => {
+            try {
+              const res = await window.GameBridge.end(sid, payload || {});
+              $log.textContent = '종료 기록: ' + JSON.stringify(res, null, 2);
+            } catch (e) {
+              $log.textContent = '종료 실패: ' + e;
+            } finally {
+              sessionStorage.removeItem('sessionId');
+            }
+          }
+        });
+
+        // 4) 강제 종료 버튼
+        $('btnEnd').addEventListener('click', async () => {
+          try { await window.GameBridge.end(sid, {}); } finally {
+            sessionStorage.removeItem('sessionId');
+            location.href = '/game';
+          }
+        });
+
+        // 5) 이탈 시 안전 종료
+        window.addEventListener('pagehide', () => window.GameBridge.safeEndOnLeave());
+      } catch (e) {
+        alert('게임 시작 중 오류: ' + e);
+        console.error(e);
+        location.href = '/game';
+      }
+    })();
+</script>
+</body>
+</html>

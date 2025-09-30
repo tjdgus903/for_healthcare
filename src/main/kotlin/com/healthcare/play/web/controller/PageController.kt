@@ -1,5 +1,6 @@
 package com.healthcare.play.web.controller
 
+import com.healthcare.play.domain.game.GameType
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
@@ -27,6 +28,12 @@ class PageController {
     fun games(model: Model): String {
         model.addAttribute("pageTitle", "게임")
         return "games/index"           // -> templates/games/index.html
+    }
+
+    @GetMapping("/play")
+    fun playPage(@RequestParam type: GameType, model: Model): String{
+        model.addAttribute("gameType", type)
+        return "games/play"
     }
 
     @GetMapping("/attendance")
