@@ -93,3 +93,17 @@ function logout(){
   applyAuthUI();                // ← 추가
   location.href='/';
 }
+
+// 공통 fetch 래퍼
+export async function api(path, opt = {}) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json', ...(opt.headers || {}) },
+    credentials: 'include',
+    ...opt,
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`${res.status} ${t || res.statusText}`);
+  }
+  return res.status === 204 ? null : res.json();
+}
