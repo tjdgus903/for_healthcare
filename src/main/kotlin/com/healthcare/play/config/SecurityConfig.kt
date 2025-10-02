@@ -42,7 +42,7 @@ class SecurityConfig(
                         "/actuator/health",
                         "/ping",
                         // 정적 파셜 (static/games/**)
-                        "/games/**"
+                        "/games/**", "/attendance/**", "/reports/**", "/subs/**"
                     ).permitAll()
 
                     // 3) 인증/발급 관련
