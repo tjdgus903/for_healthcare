@@ -49,55 +49,68 @@
       }
     }
 
-    async function boot() {
-      const type = $('gameTypeView').textContent.trim();
-      const path = gameModulePath(type);
-      if (!path) { alert('아직 구현되지 않은 게임입니다.'); location.href='/game'; return; }
+    function gamePartialPath(t) {
+      switch (t) {
+        case 'COLOR_TAP':       return '/games/color-tap.html';
+        case 'SEQUENCE_MEMORY': return '/games/sequence-memory.html';
+        case 'SHAPE_MATCH':     return '/games/shape-match.html';
+        default:                return null;
+      }
+    }
 
-      const mod = await import(path);                // 각 게임 파일도 ESM이어야 함 (export default {start})
-      const game = mod.default || mod[Object.keys(mod)[0]];
-      if (!game?.start) { alert('게임 모듈에 start가 없습니다.'); return; }
+    async function loadPartial(url, host) {
+      if (!url) return;
+      const html = await fetch(url, { cache: 'no-cache' }).then(r => r.text());
+      host.innerHTML = html;
+    }
 
-      const s = await startSession(type);
-      const sid = s.sessionId;
-      $('sessionView').textContent = sid;
+  async function boot() {
+    const type = $('gameTypeView').textContent.trim();
+    const jsPath = gameModulePath(type);
+    if (!jsPath) { alert('아직 구현되지 않은 게임입니다.'); location.href='/game'; return; }
 
-      game.start(sid, {
-        onScore: (score, acc) => {
-          $('scoreView').textContent = String(score);
-          $('accView').textContent = `${Math.round((acc||0)*100)}%`;
-        },
-        onTime: (sec) => { $('timeView').textContent = `${sec}s`; },
-        onEnd: async (payload) => {
-          try {
-            const r = await endSession(sid, payload || {});
-            $('log').textContent = '종료 기록: ' + JSON.stringify(r, null, 2);
-          } finally {
-            sessionStorage.removeItem('sessionId');
-          }
-        }
-      });
+    // 1) (선택) 파셜 먼저 넣기
+    await loadPartial(gamePartialPath(type), document.getElementById('gameArea'));
 
-      $('btnEnd').addEventListener('click', async () => {
-        try { await endSession(sid, {}); } finally {
+    // 2) 게임 모듈 로딩
+    const mod = await import(jsPath + '?v=1'); // 캐시 무효화용 ?v= 선택
+    const game = mod.default || mod[Object.keys(mod)[0]];
+    if (!game?.start) { alert('게임 모듈에 start가 없습니다.'); return; }
+
+    // 3) 세션 생성
+    const s = await startSession(type);
+    const sid = s.sessionId;
+    $('sessionView').textContent = sid;
+
+    // 4) 게임 시작
+    game.start(sid, {
+      onScore: (score, acc) => {
+        $('scoreView').textContent = String(score);
+        $('accView').textContent = `${Math.round((acc||0)*100)}%`;
+      },
+      onTime: (sec) => { $('timeView').textContent = `${sec}s`; },
+      onEnd: async (payload) => {
+        try {
+          const r = await endSession(sid, payload || {});
+          $('log').textContent = '종료 기록: ' + JSON.stringify(r, null, 2);
+        } finally {
           sessionStorage.removeItem('sessionId');
-          location.href = '/game';
         }
-      });
+      }
+    });
 
-      window.addEventListener('pagehide', () => safeEndOnLeave());
-    }
+    // 종료/이탈 처리
+    document.getElementById('btnEnd').addEventListener('click', async () => {
+      try { await endSession(sid, {}); } finally {
+        sessionStorage.removeItem('sessionId');
+        location.href = '/game';
+      }
+    });
+    window.addEventListener('pagehide', () => safeEndOnLeave());
+  }
 
-    // 자동 시작 or 버튼으로 시작
-    document.getElementById('btnStart')?.addEventListener('click', () => boot().catch(handleErr));
-    // 자동 시작 원하면 아래 한 줄 주석 해제
-    // boot().catch(handleErr);
-
-    function handleErr(e){
-      console.error(e);
-      alert('게임 시작 중 오류: ' + e);
-      location.href = '/game';
-    }
+  document.getElementById('btnStart')?.addEventListener('click', () => boot().catch(handleErr));
+  function handleErr(e){ console.error(e); alert('게임 시작 중 오류: ' + e); location.href = '/game'; }
 </script>
 </body>
 </html>

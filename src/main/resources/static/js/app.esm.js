@@ -1,9 +1,9 @@
-const store = {
+export const store = {
   get token(){ return localStorage.getItem('jwt') },
   set token(v){ v?localStorage.setItem('jwt',v):localStorage.removeItem('jwt') }
 };
 
-async function api(path, opts={}){
+export async function api(path, opts={}){
   const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
   if(store.token) headers['Authorization'] = 'Bearer ' + store.token;
   const res = await fetch(path, {...opts, headers});
@@ -16,7 +16,7 @@ async function api(path, opts={}){
   return ct.includes('application/json') ? res.json() : res.text();
 }
 
-function toast(msg){
+export function toast(msg){
   let el = document.querySelector('.toast');
   if(!el){ el = document.createElement('div'); el.className='toast'; document.body.appendChild(el); }
   el.textContent = msg; el.style.display='block';
@@ -56,7 +56,7 @@ function currentUser(){
   return { id: p.sub, email: p.email || '', role: p.role || '' };
 }
 
-// 로그인/비로그인에 따라 버튼/계정 표시 토글
+// 로그인/비로그인에 따라 버튼/계정
 function applyAuthUI(){
   const authed = !!store.token;
   document.querySelectorAll('.need-auth').forEach(el => el.style.display = authed ? '' : 'none');
@@ -92,18 +92,4 @@ function logout(){
   store.token=null; toast('로그아웃됨');
   applyAuthUI();                // ← 추가
   location.href='/';
-}
-
-// 공통 fetch 래퍼
-export async function api(path, opt = {}) {
-  const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json', ...(opt.headers || {}) },
-    credentials: 'include',
-    ...opt,
-  });
-  if (!res.ok) {
-    const t = await res.text().catch(() => '');
-    throw new Error(`${res.status} ${t || res.statusText}`);
-  }
-  return res.status === 204 ? null : res.json();
 }
