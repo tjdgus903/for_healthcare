@@ -2,28 +2,28 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head><title>홈</title></head>
 <body>
-<div th:replace="~{layout/base :: layout('홈', ~{::content})}"></div>
+<div th:replace="~{layout/base :: layout('홈', ~{::content})}">
+    <div id="content" th:fragment="content">
+        <section class="card border-0 shadow-sm p-3 mb-3">
+            <h2 class="h4 fw-bold mb-3">오늘의 훈련</h2>
+            <div class="d-flex flex-wrap gap-2">
+                <a th:href="@{/games}" class="btn btn-primary btn-lg fw-bold">▶ 게임 시작</a>
+                <button id="btnAttendanceCheck" class="btn btn-outline-primary btn-lg fw-bold">출석 체크</button>
+            </div>
+            <p class="text-muted mt-2 mb-0">큰 버튼을 눌러 바로 시작하세요. 보호자와 함께하면 더 좋아요.</p>
+        </section>
 
-<div id="content" th:fragment="content">
-    <section class="card border-0 shadow-sm p-3 mb-3">
-        <h2 class="h4 fw-bold mb-3">오늘의 훈련</h2>
-        <div class="d-flex flex-wrap gap-2">
-            <a th:href="@{/games}" class="btn btn-primary btn-lg fw-bold">▶ 게임 시작</a>
-            <button id="btnAttendanceCheck" class="btn btn-outline-primary btn-lg fw-bold">출석 체크</button>
-        </div>
-        <p class="text-muted mt-2 mb-0">큰 버튼을 눌러 바로 시작하세요. 보호자와 함께하면 더 좋아요.</p>
-    </section>
-
-    <section class="card border-0 shadow-sm p-3 mb-3">
-        <h2 class="h4 fw-bold mb-3">출석 달력</h2>
-        <div class="d-flex flex-wrap align-items-center gap-2">
-            <label for="month" class="fw-bold me-1">월 선택</label>
-            <input id="month" type="month" class="form-control" style="max-width:220px" value="2025-10"/>
-            <button id="btnFetchCalendar" class="btn btn-outline-primary fw-bold">불러오기</button>
-        </div>
-        <div id="calendar" class="mt-3"></div>
-        <pre id="out" class="mt-2 mb-0"></pre>
-    </section>
+        <section class="card border-0 shadow-sm p-3 mb-3">
+            <h2 class="h4 fw-bold mb-3">출석 달력</h2>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <label for="month" class="fw-bold me-1">월 선택</label>
+                <input id="month" type="month" class="form-control" style="max-width:220px" value="2025-10"/>
+                <button id="btnFetchCalendar" class="btn btn-outline-primary fw-bold">불러오기</button>
+            </div>
+            <div id="calendar" class="mt-3"></div>
+            <pre id="out" class="mt-2 mb-0"></pre>
+        </section>
+    </div>
 </div>
 </body>
 </html>

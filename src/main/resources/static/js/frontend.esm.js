@@ -105,10 +105,20 @@ window.addEventListener('storage', (e) => {
 async function doLogin() {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
-  const res = await post('/auth/login', { email, password });
-  setToken(res.token);
 
-  await login(email, password);
+  // 1) 서버에 로그인 요청
+  const res = await post('/auth/login', { email, password });
+
+  // 2) 토큰 저장 (키는 'jwt'로 통일)
+  setToken(res.token);         // localStorage.setItem('jwt', token)
+
+  // 3) 헤더 토글 즉시 반영
+  if (typeof applyAuthUI === 'function') applyAuthUI();
+
+  // 4) next 있으면 그쪽으로, 없으면 홈으로
+  const params = new URLSearchParams(location.search);
+  const next = params.get('next') || '/';
+  location.replace(next);
 }
 
 async function doSignup() {

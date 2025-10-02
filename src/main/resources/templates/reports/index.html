@@ -2,16 +2,16 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head><title>리포트</title></head>
 <body>
-<div th:replace="~{layout/base :: layout('리포트', ~{::content})}"></div>
-
-<div id="content" th:fragment="content">
-    <section class="card border-0 shadow-sm p-3">
-        <div class="d-flex flex-wrap gap-2">
-            <button id="btnMyReport" class="btn btn-primary btn-lg fw-bold">내 리포트 불러오기</button>
-            <button id="btnExportZip" class="btn btn-outline-primary btn-lg fw-bold">데이터 내보내기</button>
-        </div>
-        <pre id="out" class="mt-2 mb-0"></pre>
-    </section>
+<div th:replace="~{layout/base :: layout('리포트', ~{::content})}">
+    <div id="content" th:fragment="content">
+        <section class="card border-0 shadow-sm p-3">
+            <div class="d-flex flex-wrap gap-2">
+                <button id="btnMyReport" class="btn btn-primary btn-lg fw-bold">내 리포트 불러오기</button>
+                <button id="btnExportZip" class="btn btn-outline-primary btn-lg fw-bold">데이터 내보내기</button>
+            </div>
+            <pre id="out" class="mt-2 mb-0"></pre>
+        </section>
+    </div>
 </div>
 </body>
 </html>

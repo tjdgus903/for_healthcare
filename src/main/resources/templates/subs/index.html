@@ -2,17 +2,17 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head><title>구독</title></head>
 <body>
-<div th:replace="~{layout/base :: layout('구독', ~{::content})}"></div>
-
-<div id="content" th:fragment="content">
-    <section class="card border-0 shadow-sm p-3">
-        <div class="d-flex flex-wrap gap-2">
-            <button id="btnSubsStatus" class="btn btn-primary btn-lg fw-bold">구독 상태 확인</button>
-            <button id="btnVerifyStub" class="btn btn-outline-primary btn-lg fw-bold">구독 검증(모의)</button>
-            <button id="btnAdsConfig" class="btn btn-outline-primary btn-lg fw-bold">광고 설정 보기</button>
-        </div>
-        <pre id="out" class="mt-2 mb-0"></pre>
-    </section>
+<div th:replace="~{layout/base :: layout('구독', ~{::content})}">
+    <div id="content" th:fragment="content">
+        <section class="card border-0 shadow-sm p-3">
+            <div class="d-flex flex-wrap gap-2">
+                <button id="btnSubsStatus" class="btn btn-primary btn-lg fw-bold">구독 상태 확인</button>
+                <button id="btnVerifyStub" class="btn btn-outline-primary btn-lg fw-bold">구독 검증(모의)</button>
+                <button id="btnAdsConfig" class="btn btn-outline-primary btn-lg fw-bold">광고 설정 보기</button>
+            </div>
+            <pre id="out" class="mt-2 mb-0"></pre>
+        </section>
+    </div>
 </div>
 </body>
 </html>

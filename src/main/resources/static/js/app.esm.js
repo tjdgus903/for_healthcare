@@ -3,17 +3,19 @@ export const store = {
   set token(v){ v?localStorage.setItem('jwt',v):localStorage.removeItem('jwt') }
 };
 
-export async function api(path, opts={}){
-  const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
-  if(store.token) headers['Authorization'] = 'Bearer ' + store.token;
-  const res = await fetch(path, {...opts, headers});
-  if(!res.ok){
-    const t = await res.text().catch(()=>res.statusText);
-    toast('오류: ' + (t||res.status));
-    throw new Error(t||res.statusText);
+export async function api(path, opts = {}){
+  const headers = Object.assign({'Content-Type':'application/json'}, opts.headers || {});
+  if (store.token) headers['Authorization'] = 'Bearer ' + store.token;
+
+  const res = await fetch(path, { ...opts, headers, credentials: 'include' });
+  const ct = res.headers.get('content-type') || '';
+  const body = ct.includes('application/json') ? await res.json() : await res.text();
+
+  if (!res.ok) {
+    toast('오류: ' + (typeof body === 'string' ? body : JSON.stringify(body)));
+    throw new Error(res.status + ' ' + (typeof body === 'string' ? body : JSON.stringify(body)));
   }
-  const ct = res.headers.get('content-type')||'';
-  return ct.includes('application/json') ? res.json() : res.text();
+  return body;
 }
 
 export function toast(msg){
