@@ -121,6 +121,12 @@ async function doLogin() {
   location.replace(next);
 }
 
+// 로그아웃
+function logout() {
+  setToken('');           // 토큰 삭제 + UI 갱신
+  location.replace('/');  // 홈으로
+}
+
 async function doSignup() {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
@@ -233,3 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const monthEl = document.getElementById('month');
   if (monthEl && monthEl.value) fetchCalendar();
 });
+
+if (typeof window !== 'undefined') {
+  window.doLogin = doLogin;
+  window.logout = logout;
+}

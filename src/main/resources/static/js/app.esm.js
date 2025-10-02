@@ -1,3 +1,10 @@
+export { store, toast, toggleHC, decodeJwt, currentUser, applyAuthUI, api };
+
+if (typeof window !== 'undefined') {
+  window.doLogin = doLogin;
+  window.logout = logout;
+}
+
 export const store = {
   get token(){ return localStorage.getItem('jwt') },
   set token(v){ v?localStorage.setItem('jwt',v):localStorage.removeItem('jwt') }
@@ -76,22 +83,4 @@ function applyAuthUI(){
       acct.removeAttribute('title');
     }
   }
-}
-
-// 로그인/로그아웃 시 UI 갱신하도록 호출
-async function login(email,pw){
-    const res = await api('/auth/login',{method:'POST', body: JSON.stringify({email,password:pw})});
-    store.token = res.token; toast('로그인 성공');
-    applyAuthUI();
-
-    // next → 없으면 홈
-    const params = new URLSearchParams(location.search);
-    const next = params.get('next') || (sessionStorage.getItem('next') || '/');
-    try { sessionStorage.removeItem('next'); } catch {}
-    location.replace(next);
-}
-function logout(){
-  store.token=null; toast('로그아웃됨');
-  applyAuthUI();                // ← 추가
-  location.href='/';
 }
