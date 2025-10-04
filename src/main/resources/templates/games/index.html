@@ -5,40 +5,68 @@
 <div th:replace="~{layout/base :: layout('게임', ~{::content})}">
     <div id="content" th:fragment="content">
         <h1 class="h4 fw-bold mb-3">게임 선택</h1>
+
         <section class="row g-3">
             <div class="col-12 col-md-6">
                 <div class="card border-0 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between">
-                    <div><h2 class="h5 fw-bold mb-1">컬러 탭</h2><div class="text-muted">같은 색을 빠르고 정확하게 탭</div></div>
-                    <!--<button class="btn btn-primary btn-lg fw-bold" onclick="document.getElementById('gameType').value='COLOR_TAP'; startSession('COLOR_TAP');">시작</button>-->
-                    <a class="btn btn-primary btn-lg fw-bold" th:href="@{|/play?type=COLOR_TAP|}">시작</a>
+                    <div>
+                        <h2 class="h5 fw-bold mb-1">컬러 탭</h2>
+                        <div class="text-muted">같은 색을 빠르고 정확하게 탭</div>
+                    </div>
+                    <a class="btn btn-primary btn-lg fw-bold"
+                       th:href="@{|/play?type=COLOR_TAP|}"
+                       data-play-link>시작</a>
                 </div>
             </div>
+
             <div class="col-12 col-md-6">
                 <div class="card border-0 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between">
-                    <div><h2 class="h5 fw-bold mb-1">시퀀스 메모리</h2><div class="text-muted">순서대로 따라 탭</div></div>
-                    <!--<button class="btn btn-primary btn-lg fw-bold" onclick="document.getElementById('gameType').value='SEQUENCE_MEMORY'; startSession('SEQUENCE_MEMORY');">시작</button>-->
-                    <a class="btn btn-primary btn-lg fw-bold" th:href="@{|/play?type=SEQUENCE_MEMORY|}">시작</a>
+                    <div>
+                        <h2 class="h5 fw-bold mb-1">시퀀스 메모리</h2>
+                        <div class="text-muted">순서대로 따라 탭</div>
+                    </div>
+                    <a class="btn btn-primary btn-lg fw-bold"
+                       th:href="@{|/play?type=SEQUENCE_MEMORY|}"
+                       data-play-link>시작</a>
                 </div>
             </div>
+
             <div class="col-12 col-md-6">
                 <div class="card border-0 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between">
-                    <div><h2 class="h5 fw-bold mb-1">매칭 퍼즐</h2><div class="text-muted">같은 그림을 맞춰요</div></div>
-                    <!--<button class="btn btn-primary btn-lg fw-bold" onclick="document.getElementById('gameType').value='SHAPE_MATCH'; startSession('SHAPE_MATCH');">시작</button>-->
-                    <a class="btn btn-primary btn-lg fw-bold" th:href="@{|/play?type=SHAPE_MATCH|}">시작</a>
+                    <div>
+                        <h2 class="h5 fw-bold mb-1">매칭 퍼즐</h2>
+                        <div class="text-muted">같은 그림을 맞춰요</div>
+                    </div>
+                    <a class="btn btn-primary btn-lg fw-bold"
+                       th:href="@{|/play?type=SHAPE_MATCH|}"
+                       data-play-link>시작</a>
                 </div>
             </div>
         </section>
 
-        <section class="card border-0 shadow-sm p-3 mt-3">
-            <input id="gameType" type="hidden"/>
-            <label for="sessionId" class="fw-bold mb-2">세션 ID</label>
-            <input id="sessionId" readonly class="form-control form-control-lg"/>
-            <div class="d-flex flex-wrap gap-2 mt-3">
-                <button id="btnEndSession" class="btn btn-outline-primary btn-lg fw-bold">세션 종료(데모)</button>
-            </div>
-            <pre id="out" class="mt-2 mb-0"></pre>
-        </section>
+        <!-- (이전 데모용 섹션은 그대로 필요하면 유지) -->
     </div>
 </div>
+
+<!-- 로그인 체크 스크립트: games/index 에서만 동작 -->
+<script>
+    (function(){
+      const links = document.querySelectorAll('a[data-play-link]');
+      links.forEach(a => {
+        a.addEventListener('click', (e) => {
+          const jwt = localStorage.getItem('jwt');
+          if (!jwt) {
+            e.preventDefault();
+            const next = a.getAttribute('href'); // e.g. /play?type=COLOR_TAP
+            // 선택: 세션에도 기억(혹시 모듈에서 참고할 때 사용)
+            try { sessionStorage.setItem('next', next); } catch {}
+            if (typeof toast === 'function') { toast('로그인이 필요합니다'); }
+            // 로그인 후 다시 원래 목적지로
+            location.href = `/login?next=${encodeURIComponent(next)}`;
+          }
+        });
+      });
+    })();
+</script>
 </body>
 </html>

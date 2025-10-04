@@ -1,16 +1,98 @@
-<div class="color-tap" data-game="color-tap">
-    <!-- 지시/타깃 색상 표시 -->
-    <div id="ct-target" class="fw-bold mb-2" aria-live="polite">
-        준비되면 <span class="text-muted">시작</span>을 눌러주세요.
+<!-- 접근성 높은 컬러 탭 UI 파셜 -->
+<div class="ctap-wrap">
+
+    <!-- 안내/설명 -->
+    <div class="ctap-intro" role="status" aria-live="polite">
+        <div class="ctap-title">아래 <b>지시된 색</b>과 같은 색 칸을 눌러 주세요.</div>
+        <div class="ctap-sub">만약 보이지 않으면 <b>없음</b> 버튼을 누르세요.</div>
     </div>
 
-    <!-- 3x3 버튼 그리드가 들어갈 컨테이너 -->
-    <div id="ct-grid" class="d-grid gap-2" style="grid-template-columns: repeat(3, 80px);">
-        <!-- color-tap.js에서 버튼 9개를 동적으로 채웁니다 -->
+    <!-- 타깃 표시 -->
+    <div class="ctap-target" aria-label="지시된 색">
+        <span class="ctap-target-chip" id="ctapTargetChip" aria-hidden="true"></span>
+        <span id="ctapTargetText" class="ctap-target-text">색</span>
     </div>
 
-    <!-- 접근성 힌트(선택) -->
-    <p class="text-muted small mt-2">
-        지시된 색상을 가능한 빨리 눌러주세요. 반응시간과 정답/오답이 기록됩니다.
-    </p>
+    <!-- 난이도/옵션 -->
+    <div class="ctap-toolbar">
+        <label class="ctap-select">
+            난이도
+            <select id="ctapLevel" aria-label="난이도 선택">
+                <option value="EASY">쉬움 (2×2)</option>
+                <option value="NORMAL" selected>보통 (3×3)</option>
+                <option value="HARD">어려움 (4×4)</option>
+            </select>
+        </label>
+        <label class="ctap-select">
+            모양 표시
+            <select id="ctapOverlay" aria-label="버튼에 텍스트/모양 표시">
+                <option value="TEXT" selected>텍스트</option>
+                <option value="ICON">모양</option>
+                <option value="NONE">없음</option>
+            </select>
+        </label>
+        <label class="ctap-select">
+            효과음
+            <select id="ctapSound" aria-label="효과음 설정">
+                <option value="OFF" selected>끔</option>
+                <option value="ON">켬</option>
+            </select>
+        </label>
+    </div>
+
+    <!-- 그리드 -->
+    <div id="ctapGrid" class="ctap-grid" role="group" aria-label="색 선택 그리드"></div>
+
+    <!-- 동작 버튼 -->
+    <div class="ctap-actions">
+        <button id="ctapNone" class="ctap-btn ctap-btn-outline" aria-label="지시된 색이 보이지 않음">없음</button>
+        <button id="ctapPause" class="ctap-btn ctap-btn-outline" aria-label="일시정지">일시정지</button>
+        <button id="ctapRestart" class="ctap-btn ctap-btn-primary" aria-label="다시 시작">다시 시작</button>
+    </div>
+
+    <!-- 경고/안내 -->
+    <div id="ctapMessage" class="ctap-message" role="status" aria-live="polite"></div>
 </div>
+
+<style>
+    .ctap-wrap{ display:flex; flex-direction:column; gap:16px }
+    .ctap-title{ font-size:1.25rem; font-weight:700 }
+    .ctap-sub{ color:#666 }
+    .ctap-target{ display:flex; align-items:center; gap:12px; margin-top:4px }
+    .ctap-target-chip{ width:36px; height:36px; border-radius:10px; border:3px solid #000; box-shadow:0 1px 2px rgba(0,0,0,.2) }
+    .ctap-target-text{ font-size:1.5rem; font-weight:800; letter-spacing:.5px }
+
+    .ctap-toolbar{ display:flex; flex-wrap:wrap; gap:10px; align-items:center }
+    .ctap-select{ display:flex; align-items:center; gap:6px; font-weight:600 }
+    .ctap-select select{ padding:.4rem .6rem; border-radius:8px; border:1px solid #ccc; font-size:1rem }
+
+    .ctap-grid{ display:grid; gap:12px; justify-content:center; padding:8px 0 }
+    /* 격자 크기는 JS에서 난이도별로 바꿔줌 */
+
+    .ctap-cell{
+      width:110px; height:110px; border-radius:18px; border:3px solid #000;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:900; font-size:1.15rem; user-select:none; -webkit-tap-highlight-color: transparent;
+      box-shadow:0 2px 4px rgba(0,0,0,.2);
+    }
+    @media (max-width: 420px){ .ctap-cell{ width:92px; height:92px; } }
+
+    .ctap-badge{ background:rgba(255,255,255,.8); padding:.15rem .4rem; border-radius:8px; border:1px solid rgba(0,0,0,.25) }
+    .ctap-ghost{ opacity:.0; } /* 오버레이 NONE 일 때 */
+
+    .ctap-actions{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap }
+    .ctap-btn{
+      min-width:120px; padding:.8rem 1.2rem; border-radius:12px; font-size:1.1rem; font-weight:800; cursor:pointer;
+      border:2px solid #000; box-shadow:0 2px 4px rgba(0,0,0,.2); background:#fff;
+    }
+    .ctap-btn-primary{ background:#1e88e5; color:#fff; }
+    .ctap-btn-outline{ background:#fff; }
+
+    .ctap-message{ min-height:1.3em; text-align:center; color:#333; font-weight:700 }
+
+    /* 피드백 */
+    .ctap-correct{ animation:flash 300ms ease-out }
+    @keyframes flash { 0%{ transform:scale(1.0)} 50%{ transform:scale(1.06)} 100%{ transform:scale(1.0)}}
+    .ctap-wrong{ animation:shake .25s linear }
+    @keyframes shake { 0%,100%{ transform:translateX(0)} 25%{ transform:translateX(-6px)} 75%{ transform:translateX(6px)}}
+</style>
