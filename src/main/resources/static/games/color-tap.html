@@ -1,98 +1,102 @@
-<!-- 접근성 높은 컬러 탭 UI 파셜 -->
-<div class="ctap-wrap">
+<!-- Minimal Color Tap UI -->
+<div class="ct-min">
 
-    <!-- 안내/설명 -->
-    <div class="ctap-intro" role="status" aria-live="polite">
-        <div class="ctap-title">아래 <b>지시된 색</b>과 같은 색 칸을 눌러 주세요.</div>
-        <div class="ctap-sub">만약 보이지 않으면 <b>없음</b> 버튼을 누르세요.</div>
-    </div>
+    <!-- 헤더: 타깃/타이머/점수/컨트롤 -->
+    <div class="ct-min__bar" role="toolbar" aria-label="게임 컨트롤">
+        <!-- 타깃 컬러 힌트 (세로 점 5개) -->
+        <div class="ct-min__target" aria-label="지시된 색">
+            <span class="ct-dot"></span><span class="ct-dot"></span><span class="ct-dot"></span>
+            <span class="ct-dot ring"></span><span class="ct-dot"></span>
+        </div>
 
-    <!-- 타깃 표시 -->
-    <div class="ctap-target" aria-label="지시된 색">
-        <span class="ctap-target-chip" id="ctapTargetChip" aria-hidden="true"></span>
-        <span id="ctapTargetText" class="ctap-target-text">색</span>
-    </div>
+        <!-- 중앙: 타이머 · 점수 -->
+        <div class="ct-min__stats" aria-live="polite" role="status">
+            <div class="stat">
+                <span class="stat__label" aria-hidden="true">⏱</span>
+                <span id="ctTime" class="stat__val">30</span>
+            </div>
+            <div class="stat">
+                <span class="stat__label" aria-hidden="true">⭐</span>
+                <span id="ctScore" class="stat__val">0</span>
+            </div>
+        </div>
 
-    <!-- 난이도/옵션 -->
-    <div class="ctap-toolbar">
-        <label class="ctap-select">
-            난이도
-            <select id="ctapLevel" aria-label="난이도 선택">
-                <option value="EASY">쉬움 (2×2)</option>
-                <option value="NORMAL" selected>보통 (3×3)</option>
-                <option value="HARD">어려움 (4×4)</option>
+        <!-- 우측: 난이도 · 없음 · 일시정지 · 리스타트 -->
+        <div class="ct-min__actions">
+            <select id="ctLevel" class="ctl" aria-label="난이도">
+                <option value="EASY">2×2</option>
+                <option value="NORMAL" selected>3×3</option>
+                <option value="HARD">4×4</option>
             </select>
-        </label>
-        <label class="ctap-select">
-            모양 표시
-            <select id="ctapOverlay" aria-label="버튼에 텍스트/모양 표시">
-                <option value="TEXT" selected>텍스트</option>
-                <option value="ICON">모양</option>
-                <option value="NONE">없음</option>
-            </select>
-        </label>
-        <label class="ctap-select">
-            효과음
-            <select id="ctapSound" aria-label="효과음 설정">
-                <option value="OFF" selected>끔</option>
-                <option value="ON">켬</option>
-            </select>
-        </label>
+
+            <button id="ctNone" class="btn ghost" aria-label="없음">Ø</button>
+            <button id="ctPause" class="btn ghost" aria-label="일시정지/재개">❙❙</button>
+            <button id="ctRestart" class="btn ghost" aria-label="다시 시작">↻</button>
+        </div>
     </div>
 
-    <!-- 그리드 -->
-    <div id="ctapGrid" class="ctap-grid" role="group" aria-label="색 선택 그리드"></div>
+    <!-- 플레이 필드 -->
+    <div id="ctStage" class="ct-min__stage" role="group" aria-label="색 선택"></div>
 
-    <!-- 동작 버튼 -->
-    <div class="ctap-actions">
-        <button id="ctapNone" class="ctap-btn ctap-btn-outline" aria-label="지시된 색이 보이지 않음">없음</button>
-        <button id="ctapPause" class="ctap-btn ctap-btn-outline" aria-label="일시정지">일시정지</button>
-        <button id="ctapRestart" class="ctap-btn ctap-btn-primary" aria-label="다시 시작">다시 시작</button>
-    </div>
-
-    <!-- 경고/안내 -->
-    <div id="ctapMessage" class="ctap-message" role="status" aria-live="polite"></div>
+    <!-- 메시지(짧은 피드백) -->
+    <div id="ctMsg" class="ct-min__msg" role="status" aria-live="polite"></div>
 </div>
 
 <style>
-    .ctap-wrap{ display:flex; flex-direction:column; gap:16px }
-    .ctap-title{ font-size:1.25rem; font-weight:700 }
-    .ctap-sub{ color:#666 }
-    .ctap-target{ display:flex; align-items:center; gap:12px; margin-top:4px }
-    .ctap-target-chip{ width:36px; height:36px; border-radius:10px; border:3px solid #000; box-shadow:0 1px 2px rgba(0,0,0,.2) }
-    .ctap-target-text{ font-size:1.5rem; font-weight:800; letter-spacing:.5px }
-
-    .ctap-toolbar{ display:flex; flex-wrap:wrap; gap:10px; align-items:center }
-    .ctap-select{ display:flex; align-items:center; gap:6px; font-weight:600 }
-    .ctap-select select{ padding:.4rem .6rem; border-radius:8px; border:1px solid #ccc; font-size:1rem }
-
-    .ctap-grid{ display:grid; gap:12px; justify-content:center; padding:8px 0 }
-    /* 격자 크기는 JS에서 난이도별로 바꿔줌 */
-
-    .ctap-cell{
-      width:110px; height:110px; border-radius:18px; border:3px solid #000;
-      display:flex; align-items:center; justify-content:center;
-      font-weight:900; font-size:1.15rem; user-select:none; -webkit-tap-highlight-color: transparent;
-      box-shadow:0 2px 4px rgba(0,0,0,.2);
+    :root {
+      --bg: #efe9cf;        /* 부드러운 베이지 */
+      --ink: #1b1b1b;
+      --tile-edge: #0f0f0f;
+      --bar: rgba(255,255,255,0.75);
+      --ring: #ffffff;
     }
-    @media (max-width: 420px){ .ctap-cell{ width:92px; height:92px; } }
 
-    .ctap-badge{ background:rgba(255,255,255,.8); padding:.15rem .4rem; border-radius:8px; border:1px solid rgba(0,0,0,.25) }
-    .ctap-ghost{ opacity:.0; } /* 오버레이 NONE 일 때 */
-
-    .ctap-actions{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap }
-    .ctap-btn{
-      min-width:120px; padding:.8rem 1.2rem; border-radius:12px; font-size:1.1rem; font-weight:800; cursor:pointer;
-      border:2px solid #000; box-shadow:0 2px 4px rgba(0,0,0,.2); background:#fff;
+    .ct-min{ display:grid; grid-template-rows:auto 1fr auto; gap:12px; min-height:60vh }
+    .ct-min__bar{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:10px 12px; border-radius:14px; background:var(--bar); backdrop-filter: blur(6px);
+      border:2px solid var(--tile-edge);
     }
-    .ctap-btn-primary{ background:#1e88e5; color:#fff; }
-    .ctap-btn-outline{ background:#fff; }
+    body .ct-min{ background:var(--bg); padding:8px; border-radius:18px }
 
-    .ctap-message{ min-height:1.3em; text-align:center; color:#333; font-weight:700 }
+    /* 타깃 힌트(세로 점) */
+    .ct-min__target{ display:flex; align-items:center; gap:8px }
+    .ct-dot{ width:18px; height:18px; border-radius:50%; border:2px solid var(--tile-edge); display:inline-block }
+    .ct-dot.ring{ box-shadow:0 0 0 3px var(--ring) inset }
 
-    /* 피드백 */
-    .ctap-correct{ animation:flash 300ms ease-out }
-    @keyframes flash { 0%{ transform:scale(1.0)} 50%{ transform:scale(1.06)} 100%{ transform:scale(1.0)}}
-    .ctap-wrong{ animation:shake .25s linear }
-    @keyframes shake { 0%,100%{ transform:translateX(0)} 25%{ transform:translateX(-6px)} 75%{ transform:translateX(6px)}}
+    /* 스탯 */
+    .ct-min__stats{ display:flex; gap:18px; align-items:center }
+    .stat{ display:flex; align-items:center; gap:6px; font-weight:800; font-size:1.1rem; color:var(--ink) }
+    .stat__val{ min-width:2ch; text-align:right }
+
+    /* 액션 */
+    .ct-min__actions{ display:flex; align-items:center; gap:10px }
+    .ctl{ padding:.4rem .6rem; border-radius:10px; border:2px solid var(--tile-edge); background:#fff; font-weight:700 }
+    .btn{ width:44px; height:44px; border-radius:12px; border:2px solid var(--tile-edge); background:#fff; font-size:1.1rem; font-weight:900; }
+    .btn.ghost{ background:transparent }
+
+    /* 스테이지(큰 정사각형 타일) */
+    .ct-min__stage{
+      display:grid; place-content:center; gap:14px;
+      grid-auto-rows:minmax(90px, 16vh); grid-auto-columns:minmax(90px, 16vh);
+      justify-content:center;
+    }
+    .tile{
+      border-radius:24px; border:4px solid var(--tile-edge);
+      box-shadow:0 2px 0 var(--tile-edge), 0 6px 18px rgba(0,0,0,.12);
+      transition:transform .06s ease-out; touch-action:manipulation;
+    }
+    .tile:active{ transform:scale(.96) }
+    @media (max-width: 420px){
+      .ct-min__stage{ gap:10px; grid-auto-rows:minmax(78px, 16vh); grid-auto-columns:minmax(78px, 16vh) }
+      .btn{ width:40px; height:40px }
+    }
+
+    /* 피드백 애니메이션 */
+    .ok{ animation:pop .18s ease-out }
+    .ng{ animation:shake .22s linear }
+    @keyframes pop{ 0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
+    @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+    .ct-min__msg{ min-height:1.2em; text-align:center; font-weight:800; color:var(--ink) }
 </style>

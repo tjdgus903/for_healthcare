@@ -1,253 +1,166 @@
 import { metrics } from '/js/game-bridge.esm.js';
 
-// 팔레트(명도 대비 높은 색)
-const COLORS = [
-  { key:'red',    label:'RED',    css:'#e53935' },
-  { key:'blue',   label:'BLUE',   css:'#1e88e5' },
-  { key:'green',  label:'GREEN',  css:'#43a047' },
-  { key:'orange', label:'ORANGE', css:'#fb8c00' },
-  { key:'purple', label:'PURPLE', css:'#8e24aa' },
-  { key:'black',  label:'BLACK',  css:'#111111' },
+/* 심플 팔레트(이미지처럼 3색) */
+const PALETTE = [
+  { key:'green', css:'#76c043' }, // 연두
+  { key:'red',   css:'#e74c3c' }, // 레드
+  { key:'blue',  css:'#3498db' }  // 블루
 ];
 
-const ABSENT_RATE_DEFAULT = 0.25; // 25% 확률로 '정답 없음' 라운드
-const rnd = (n) => Math.floor(Math.random()*n);
-const pick = (arr) => arr[rnd(arr.length)];
+const ABSENT_RATE = 0.25; /* '없음' 라운드 확률 */
+const rnd = (n)=>Math.floor(Math.random()*n);
+const pick=(arr)=>arr[rnd(arr.length)];
 
 function vibrate(ms){ try{ navigator.vibrate?.(ms); }catch{} }
-function playBeep(on) {
-  if (!on || typeof window.AudioContext === 'undefined') return () => {};
-  const ctx = new AudioContext();
-  return (ok=true) => {
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = 'sine';
-    o.frequency.value = ok ? 880 : 240;
-    g.gain.value = 0.04;
-    o.connect(g).connect(ctx.destination);
-    o.start();
-    setTimeout(()=>{ o.stop(); }, ok? 120:180);
-  };
-}
 
 export default {
-  /**
-   * 시작 진입점
-   * @param {string} sessionId
-   * @param {{onScore?:(s:number,a:number)=>void, onTime?:(sec:number)=>void, onEnd?:(payload)=>void}} hooks
-   */
   start(sessionId, hooks = {}) {
-    // 파셜 요소 찾기
-    const gridEl     = document.getElementById('ctapGrid');
-    const targetChip = document.getElementById('ctapTargetChip');
-    const targetText = document.getElementById('ctapTargetText');
-    const selLevel   = document.getElementById('ctapLevel');
-    const selOverlay = document.getElementById('ctapOverlay');
-    const selSound   = document.getElementById('ctapSound');
-    const btnNone    = document.getElementById('ctapNone');
-    const btnPause   = document.getElementById('ctapPause');
-    const btnRestart = document.getElementById('ctapRestart');
-    const msgEl      = document.getElementById('ctapMessage');
+    const stage = document.getElementById('ctStage');
+    const dots  = Array.from(document.querySelectorAll('.ct-min .ct-dot')); // 타깃 힌트 점 5개
+    const elTime= document.getElementById('ctTime');
+    const elScore=document.getElementById('ctScore');
+    const elMsg = document.getElementById('ctMsg');
+    const selLv = document.getElementById('ctLevel');
+    const btnNone = document.getElementById('ctNone');
+    const btnPause= document.getElementById('ctPause');
+    const btnRestart=document.getElementById('ctRestart');
 
-    if (!gridEl) { console.error('color-tap: grid not found'); return; }
+    let paused=false, t0=Date.now(), raf=0;
+    let score=0, total=0, correct=0;
+    let level = selLv?.value || 'NORMAL';
+    let target = null, present=false, roundStart=0;
 
-    // 상태
-    const TTL = 30; // 총 플레이 시간(초)
-    let absentRate = ABSENT_RATE_DEFAULT;
-    let t0 = Date.now();
-    let raf = 0;
-    let paused = false;
-
-    let score = 0, total = 0, correct = 0;
-    let roundStart = 0;
-    let current = { target:null, present:false, level:'NORMAL', overlay:'TEXT', sound:'OFF' };
-
-    // 사운드 준비
-    const beep = playBeep(true);
-
-    // 레벨에 따른 그리드 크기
-    function gridCols(level) {
-      switch(level){
-        case 'EASY':   return 2;
-        case 'HARD':   return 4;
-        case 'NORMAL':
-        default:       return 3;
-      }
+    // 레이아웃(난이도)
+    function side(level){
+      if(level==='EASY') return 2;
+      if(level==='HARD') return 4;
+      return 3;
+    }
+    function applyGrid(){
+      const n=side(level);
+      stage.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
     }
 
-    function setGridTemplate(level){
-      const cols = gridCols(level);
-      gridEl.style.gridTemplateColumns = `repeat(${cols}, minmax(90px, 1fr))`;
+    // 타겟 힌트(세로 점 색)
+    function paintTargetDots(colorCss){
+      dots.forEach(d=>{ d.style.background = colorCss; });
     }
 
-    function showMsg(s) {
-      msgEl.textContent = s || '';
-      if (s) setTimeout(() => { msgEl.textContent = ''; }, 1200);
-    }
-
-    function updateScore() {
-      const acc = total ? correct/total : 0;
-      hooks.onScore?.(score, acc);
-    }
-
-    function setTargetUI(color) {
-      targetChip.style.background = color.css;
-      targetText.textContent = color.label;
+    function setMsg(s){ elMsg.textContent=s||''; if(s) setTimeout(()=>elMsg.textContent='',900); }
+    function updateScore(){
+      const acc = total? (correct/total):0;
+      hooks.onScore?.(score,acc);
+      elScore.textContent = String(score);
     }
 
     // 타이머
+    const TTL = 30;
     function tick(){
-      if (paused) { raf = requestAnimationFrame(tick); return; }
+      if (paused) return raf=requestAnimationFrame(tick);
       const remain = Math.max(0, TTL - Math.floor((Date.now()-t0)/1000));
+      elTime.textContent = String(remain);
       hooks.onTime?.(remain);
-      if (remain <= 0) {
+      if(remain<=0){
         cancelAnimationFrame(raf);
-        const acc = total ? correct/total : 0;
-        hooks.onEnd?.({ score, accuracy: +acc.toFixed(3), meta:{ total, correct, absentRate } });
+        const acc = total? +(correct/total).toFixed(3):0;
+        hooks.onEnd?.({ score, accuracy: acc, meta:{ total, correct, palette:'GRB', absent:ABSENT_RATE, level }});
         return;
       }
-      raf = requestAnimationFrame(tick);
+      raf=requestAnimationFrame(tick);
     }
 
     // 라운드 생성
-    function buildRound() {
+    function buildRound(){
       total++;
-      const target = pick(COLORS);
-      const present = Math.random() > absentRate; // false면 '없음'이 정답인 라운드
+      target = pick(PALETTE);
+      present = Math.random() > ABSENT_RATE;
+      paintTargetDots(target.css);
 
-      current.target  = target;
-      current.present = present;
+      stage.innerHTML='';
+      const n = side(level);
+      const count = n*n;
+      const cells = Array(count).fill(null);
 
-      setTargetUI(target);
-
-      // 그리드 채우기
-      gridEl.innerHTML = '';
-      const cols = gridCols(current.level);
-      const cellCount = cols * cols;
-      const cells = Array(cellCount).fill(null);
-
-      if (present) {
-        cells[rnd(cellCount)] = target;
-      }
-      for (let i=0; i<cellCount; i++) {
-        if (!cells[i]) {
-          const pool = present ? COLORS : COLORS.filter(c => c.key !== target.key);
+      if(present) cells[rnd(count)] = target;
+      for(let i=0;i<count;i++){
+        if(!cells[i]){
+          const pool = present ? PALETTE : PALETTE.filter(c=>c.key!==target.key);
           cells[i] = pick(pool);
         }
       }
 
       roundStart = performance.now();
-      cells.forEach(color => {
-        const btn = document.createElement('button');
-        btn.className = 'ctap-cell';
-        btn.style.background = color.css;
-        btn.setAttribute('aria-label', color.label);
-
-        // 오버레이
-        const badge = document.createElement('span');
-        badge.className = 'ctap-badge';
-        if (current.overlay === 'TEXT') {
-          badge.textContent = color.label;
-        } else if (current.overlay === 'ICON') {
-          // 간단한 도형(●) — 고대비에서 가독성 ↑
-          badge.textContent = '●';
-        } else {
-          badge.classList.add('ctap-ghost'); // 숨김
-        }
-        btn.appendChild(badge);
-
-        btn.onclick = () => handlePick(color.key, btn);
-        gridEl.appendChild(btn);
+      cells.forEach(color=>{
+        const tile = document.createElement('button');
+        tile.className='tile';
+        tile.style.background = color.css;
+        tile.style.borderColor = '#0f0f0f';
+        tile.onclick = () => onPick(color.key, tile);
+        stage.appendChild(tile);
       });
     }
 
-    // 선택 처리
-    async function handlePick(chosenKey, cellEl) {
-      if (paused) return;
-      const rt = Math.round(performance.now() - roundStart);
-      const ok = (current.present && chosenKey === current.target.key);
-
-      if (ok) {
-        score += 10; correct++;
-        cellEl.classList.add('ctap-correct');
-        vibrate(20); beep(true);
-      } else {
-        cellEl.classList.add('ctap-wrong');
-        vibrate(60); beep(false);
-      }
-
-      try {
-        await metrics(sessionId, [
-          { key:'reaction_ms', value:rt, unit:'ms' },
-          {
-            key: ok ? 'tap_correct' : 'tap_wrong',
-            value:1,
-            // 서버는 extra를 JSON 문자열 or jsonb로 받도록 만들었음 → 객체를 그대로 주면 Jackson이 string으로 직렬화함
-            extra: { chosen: chosenKey, target: current.target.key, present: current.present, level: current.level }
-          }
-        ]);
-      } catch {}
-
-      updateScore();
-      setTimeout(() => buildRound(), 120); // 짧은 피드백 후 다음 라운드
+    async function sendMetrics(items){
+      try{ await metrics(sessionId, items); }catch{}
     }
 
-    // 없음 버튼
-    btnNone.onclick = async () => {
-      if (paused) return;
-      const rt = Math.round(performance.now() - roundStart);
-      const ok = !current.present;
+    async function onPick(chosenKey, el){
+      if(paused) return;
+      const rt = Math.round(performance.now()-roundStart);
+      const ok = (present && chosenKey===target.key);
+      if(ok){ score+=10; correct++; el.classList.add('ok'); vibrate(20); }
+      else  { el.classList.add('ng'); vibrate(50); }
 
-      if (ok) { score += 10; correct++; vibrate(20); beep(true); }
-      else    { vibrate(60); beep(false); }
+      sendMetrics([
+        { key:'reaction_ms', value:rt, unit:'ms' },
+        { key: ok?'tap_correct':'tap_wrong', value:1, extra:{ chosen:chosenKey, target:target.key, present, level } }
+      ]);
 
-      try {
-        await metrics(sessionId, [
-          { key:'reaction_ms', value:rt, unit:'ms' },
-          { key: ok ? 'tap_none_correct' : 'tap_none_wrong', value:1, extra:{ target: current.target.key, level: current.level } }
-        ]);
-      } catch {}
-
-      showMsg(ok ? '정답! (없음)' : '오답이에요');
       updateScore();
-      setTimeout(() => buildRound(), 140);
+      setTimeout(buildRound, 110);
+    }
+
+    // 없음(타깃이 실제 없을 때 정답)
+    btnNone.onclick = ()=>{
+      if(paused) return;
+      const rt = Math.round(performance.now()-roundStart);
+      const ok = !present;
+      if(ok){ score+=10; correct++; vibrate(20); } else vibrate(50);
+
+      sendMetrics([
+        { key:'reaction_ms', value:rt, unit:'ms' },
+        { key: ok?'tap_none_correct':'tap_none_wrong', value:1, extra:{ target:target.key, level } }
+      ]);
+
+      updateScore();
+      setMsg(ok?'정답':'오답');
+      setTimeout(buildRound, 120);
     };
 
-    // 일시정지/재개
-    btnPause.onclick = () => {
+    btnPause.onclick = ()=>{
       paused = !paused;
-      btnPause.textContent = paused ? '재개' : '일시정지';
-      gridEl.style.pointerEvents = paused ? 'none' : 'auto';
-      showMsg(paused ? '일시정지됨' : '');
+      btnPause.textContent = paused ? '▶' : '❙❙';
+      stage.style.pointerEvents = paused ? 'none':'auto';
+      if(!paused) { // 재개 시 라운드 타이밍 초기화
+        roundStart = performance.now();
+      }
     };
 
-    // 다시 시작
-    btnRestart.onclick = () => {
-      score = 0; total = 0; correct = 0;
-      t0 = Date.now();
-      paused = false;
-      btnPause.textContent = '일시정지';
-      gridEl.style.pointerEvents = 'auto';
-      updateScore();
-      buildRound();
+    btnRestart.onclick = ()=>{
+      score=0; total=0; correct=0; paused=false;
+      btnPause.textContent='❙❙';
+      stage.style.pointerEvents='auto';
+      t0=Date.now();
+      updateScore(); buildRound();
     };
 
-    // 옵션 바인딩
-    function applyOptions() {
-      current.level   = selLevel?.value   || 'NORMAL';
-      current.overlay = selOverlay?.value || 'TEXT';
-      current.sound   = selSound?.value   || 'OFF';
-      setGridTemplate(current.level);
-    }
+    selLv?.addEventListener('change', ()=>{
+      level = selLv.value || 'NORMAL';
+      applyGrid(); buildRound();
+    });
 
-    selLevel?.addEventListener('change', () => { applyOptions(); buildRound(); });
-    selOverlay?.addEventListener('change', () => { applyOptions(); buildRound(); });
-    selSound?.addEventListener('change', () => { /* 현재는 비프 on/off만 → 상단의 playBeep 호출을 제어하려면 필요 시 개선 */ });
-
-    // 초기 세팅
-    applyOptions();
-    updateScore();
-    buildRound();
-    raf = requestAnimationFrame(tick);
+    // 초기화
+    applyGrid(); updateScore(); buildRound();
+    raf=requestAnimationFrame(tick);
   }
 };
