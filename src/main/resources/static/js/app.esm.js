@@ -1,3 +1,25 @@
+export const getToken = () => localStorage.getItem('jwt') || '';
+export const setToken = (t) => localStorage.setItem('jwt', t || '');
+export const isAuthed  = () => !!getToken();
+
+export async function api(path, opts = {}) {
+  const headers = Object.assign({'Content-Type':'application/json'}, opts.headers || {});
+  const jwt = getToken();
+  if (jwt) headers['Authorization'] = 'Bearer ' + jwt;
+
+  const res = await fetch(path, { ...opts, headers, credentials: 'include' });
+  const ct = res.headers.get('content-type') || '';
+  const body = ct.includes('application/json') ? await res.json() : await res.text();
+
+  if (!res.ok) {
+    // 에러 객체에 status를 실어둠 (401/403 분기용)
+    const err = new Error(typeof body === 'string' ? body : JSON.stringify(body));
+    err.status = res.status;
+    throw err;
+  }
+  return body;
+}
+
 const store = {
   get token(){ return localStorage.getItem('jwt') },
   set token(v){ v ? localStorage.setItem('jwt', v) : localStorage.removeItem('jwt') }
