@@ -1,98 +1,61 @@
-﻿# for_healthcare
-
- # 📌 전체 개발 로드맵 (업데이트 반영 버전)
-
-## M1. 기본 환경 & 인프라 (✔ 진행됨)
-
-- ✔ **프로젝트 부트스트랩** (Spring Boot 3 + Kotlin + JPA + H2/PG 분리)
-- ✔ **출석체크 기능** (`/attendance/check`, `/attendance/calendar`)
-- ✔ **DevDataLoader**로 기본 유저 생성
-- ⬜ **Swagger UI 추가** → 브라우저에서 테스트 가능하게
+# 🧠 NeuroCare Play
+인지 기능 향상 및 건강 관리용 게임 앱  
+치매·파킨슨 환자 등 고령층 대상 맞춤형 브레인 트레이닝 프로그램  
+보호자, 기관, 의료진을 위한 관리 및 모니터링 기능 제공
 
 ---
 
-## M2. 인증/권한 (✔ 진행됨)
-
-- ⬜ **JWT 인증** 도입
-    - 로그인 API (`POST /auth/login {id,pw}`) → JWT 발급
-    - `X-User-Id` 제거, JWT 주체 기반 권한 관리
-    - Spring Security 설정 (권한별 접근 제한)
-- ⬜ **Swagger UI Authorization 헤더 연동**
-
----
-
-## M3. 보호자–플레이어 연결 (✔ 진행됨)
-
-- ⬜ 초대 코드 발급 (`POST /care/invite`)
-- ⬜ 코드 수락 (`POST /care/accept`) → 관계 ACTIVE
-- ⬜ 연결 조회 (`GET /care/relations`)
-- 정책: 초대 코드 만료/1회용, 권한 검증 필수
+## 📌 프로젝트 개요
+- **프로젝트명:** NeuroCare Play  
+- **목표:** 시니어 대상 인지 건강 향상 및 보호자·기관 관리 기능 제공  
+- **개발 기간:** 2025.08 ~ (진행 중)  
+- **주요 기능:**  
+  - 🧩 게임 플레이 (Color Tap / Sequence Memory / Shape Match)  
+  - 📅 출석 체크 및 리워드  
+  - 🎁 광고 보상 및 구독 기반 수익화  
+  - 👨‍👩‍👧 보호자–플레이어 연결  
+  - 🏢 기관 콘솔 (B2B 관리, 리포트)  
+  - 🔒 JWT 인증 로그인  
+  - 📈 리포트 및 데이터 시각화  
+  - ⚙️ 관리자/운영자 콘솔  
 
 ---
 
-## M4. 출석체크 고도화 (✔ 진행됨)
-
-- ⬜ 연속 출석 리워드 (배지, 힌트)
-- ⬜ 출석 리포트 (`/reports/me`, `/reports/player/{id}`)
-- ⬜ 알림/리마인드(푸시 or 단순 로컬 알림)
-
----
-
-## M5. 게임 코어 (MVP 3종) (✔ 진행됨)
-
-- ⬜ 게임 3종 구현 (Color Tap, Sequence Memory, Shape Match)
-- ⬜ `Game` / `Session` / `SessionMetric` 엔티티
-    - 공통 지표 + **game_meta(JSONB)**로 확장성 확보
-- ⬜ 게임 API (`/games`, `/sessions`)
-- ⬜ 접근성(큰 버튼/고대비/떨림 보정)
+## 🏗️ 기술 스택
+| 구분 | 기술 |
+|------|------|
+| **Backend** | Spring Boot 3 (Kotlin) + JPA + JWT + Flyway |
+| **Frontend** | Vite + Vanilla JS + Capacitor (Hybrid App) |
+| **Database** | PostgreSQL 17 (prod), H2 (local test) |
+| **Monitoring** | Micrometer + Prometheus + Grafana *(예정)* |
+| **CI/CD** | GitHub Actions + Docker *(예정)* |
+| **Infra** | Rocky Linux 9.6 (VM, 192.168.56.103) |
+| **Etc.** | Swagger, Caffeine Cache, AdMob SDK |
 
 ---
 
-## M6. 광고 & 수익화 (부담 최소화 정책 반영) (✔ 진행됨)
-
-- **광고 정책 (부담 줄이기):**
-    - ❌ 세션 중간 강제 광고 없음
-    - ✅ **보상형 광고만** (힌트, 시간 추가, 아이템 unlock 시)
-    - ✅ 세션 종료 후 1회 광고 노출 제한
-    - ✅ 구독 사용자 → 광고 완전 제거
-- ⬜ AdMob/구글 보상형 광고 SDK 연동 (안드로이드)
-- ⬜ 백엔드 플래그 (`/ads/config`)로 광고 노출 정책 제어
-
----
-
-## M7. 구독 모델 (✔ 진행됨)
-
-- ⬜ 구독 상품: 광고 제거, 리포트 기간 확장, 보호자 연결 무제한
-- ⬜ 결제: Google Play Billing + 서버 영수증 검증
-- ⬜ 구독 상태 캐싱 및 권한 미들웨어
+## 🧩 단계별 개발 현황
+| 단계 | 구현 내용 | 상태 |
+|------|------------|------|
+| M1 | 기본 환경 & 인프라 구성 | ✅ 완료 |
+| M2 | JWT 인증/권한 | ✅ 완료 |
+| M3 | 보호자–플레이어 연결 | ✅ 완료 |
+| M4 | 출석체크 고도화 | ✅ 완료 |
+| M5 | 게임 코어 (3종) | ✅ 완료 |
+| M6 | 광고 & 수익화 | ✅ 완료 |
+| M7 | 구독 모델 | ✅ 완료 |
+| M8 | 기관 콘솔 (B2B) | ✅ 완료 |
+| M9 | 개인정보/보안 강화 | ✅ 완료 |
+| M10 | 운영 & 배포 (모니터링, CI/CD) | 🚧 진행 예정 |
 
 ---
 
-## M8. 기관 콘솔 (B2B 확장) (✔ 진행됨)
+## ⚙️ 실행 방법
 
-- ⬜ 기관 계정, 코호트 관리
-- ⬜ 그룹 리포트 (PDF/CSV 내보내기)
-- ⬜ 데이터 공유 동의/해지 추적
+### 1️⃣ 백엔드 실행
+```bash
+# (Windows PowerShell 기준)
+$env:JWT_SECRET = "dev-please-change"
+$env:CRYPTO_AESKEYBASE64 = "bXktMzItYnl0ZS1yYW5kb20ta2V5"
 
----
-
-## M9. 개인정보/보안 (✔ 진행됨)
-
-- ⬜ 동의/철회 로그 (Consent)
-- ⬜ 최소 수집 원칙 + 민감 데이터 암호화
-- ⬜ 데이터 삭제/내보내기 API
-- ⬜ 서비스 약관/광고 표기 준수
-
----
-
-## M10. 운영 & 배포 (⏭ 다음 단계)
-
-- ⬜ 모니터링 (Micrometer + Prometheus + Grafana)
-- ⬜ CI/CD (GitHub Actions → Docker → 배포)
-- ⬜ Flyway 전환, 마이그레이션 관리
-- ⬜ 로그/장애 대응 프로세스
-- ⬜ DB 서버 연동(H2/Postgresql)
-
----
-
-
+./gradlew bootRun
