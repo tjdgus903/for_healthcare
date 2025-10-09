@@ -89,22 +89,6 @@ function toggleHC(){
   r.setAttribute('data-theme', r.getAttribute('data-theme')==='hc' ? '' : 'hc');
 }
 
-// ===== API 래퍼 =====
-async function api(path, opts = {}){
-  const headers = Object.assign({'Content-Type':'application/json'}, opts.headers || {});
-  if (store.token) headers['Authorization'] = 'Bearer ' + store.token;
-
-  const res = await fetch(path, { ...opts, headers, credentials: 'include' });
-  const ct = res.headers.get('content-type') || '';
-  const body = ct.includes('application/json') ? await res.json() : await res.text();
-
-  if (!res.ok) {
-    toast('오류: ' + (typeof body === 'string' ? body : JSON.stringify(body)));
-    throw new Error(res.status + ' ' + (typeof body === 'string' ? body : JSON.stringify(body)));
-  }
-  return body;
-}
-
 // ===== 로그인/로그아웃 =====
 async function doLogin(){
   const email = document.getElementById('email')?.value?.trim() || '';
@@ -129,7 +113,7 @@ function logout(){
   location.replace('/');
 }
 
-export { store, api, toast, toggleHC, decodeJwt, currentUser, applyAuthUI, doLogin, logout };
+export { store, toast, toggleHC, decodeJwt, currentUser, applyAuthUI, doLogin, logout };
 
 if (typeof window !== 'undefined') {
   window.doLogin = doLogin;
