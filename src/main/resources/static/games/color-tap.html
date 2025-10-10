@@ -3,10 +3,9 @@
 
     <!-- 헤더: 타깃/타이머/점수/컨트롤 -->
     <div class="ct-min__bar" role="toolbar" aria-label="게임 컨트롤">
-        <!-- 타깃 컬러 힌트 (세로 점 5개) -->
+        <!-- [CHANGE] 타깃 컬러: 동그라미 1개 + 크기 키움 -->
         <div class="ct-min__target" aria-label="지시된 색">
-            <span class="ct-dot"></span><span class="ct-dot"></span><span class="ct-dot"></span>
-            <span class="ct-dot ring"></span><span class="ct-dot"></span>
+            <span id="ctTarget" class="ct-target" aria-hidden="true"></span>
         </div>
 
         <!-- 중앙: 타이머 · 점수 -->
@@ -29,7 +28,8 @@
                 <option value="HARD">4×4</option>
             </select>
 
-            <button id="ctNone" class="btn ghost" aria-label="없음">Ø</button>
+            <!-- [CHANGE] 없음 버튼을 더 큼직하게 -->
+            <button id="ctNone" class="btn big" aria-label="해당 색 없음">없음</button>
             <button id="ctPause" class="btn ghost" aria-label="일시정지/재개">❙❙</button>
             <button id="ctRestart" class="btn ghost" aria-label="다시 시작">↻</button>
         </div>
@@ -38,31 +38,54 @@
     <!-- 플레이 필드 -->
     <div id="ctStage" class="ct-min__stage" role="group" aria-label="색 선택"></div>
 
+    <!-- [CHANGE] 하단에 '없음' 보조 버튼(접근성/가독성) -->
+    <div class="ct-min__footer">
+        <button id="ctNoneBottom" class="btn xl" aria-label="해당 색 없음(보조)">없음</button>
+    </div>
+
     <!-- 메시지(짧은 피드백) -->
     <div id="ctMsg" class="ct-min__msg" role="status" aria-live="polite"></div>
+
+    <!-- [CHANGE] 게임 종료 오버레이 -->
+    <div id="ctEnd" class="ct-end" hidden aria-modal="true" role="dialog" aria-labelledby="ctEndTitle">
+        <div class="ct-end__card">
+            <h2 id="ctEndTitle">게임 결과</h2>
+            <p class="ct-end__score">
+                점수: <strong id="ctEndScore">0</strong><br/>
+                정확도: <strong id="ctEndAcc">0%</strong>
+            </p>
+            <div class="ct-end__actions">
+                <button id="ctPlayAgain" class="btn big">다시 하기</button>
+                <a href="/games" class="btn big link">게임 목록으로</a>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
-    :root {
-      --bg: #efe9cf;        /* 부드러운 베이지 */
-      --ink: #1b1b1b;
-      --tile-edge: #0f0f0f;
-      --bar: rgba(255,255,255,0.75);
-      --ring: #ffffff;
+    :root{
+      --bg:#efe9cf;
+      --ink:#1b1b1b;
+      --tile-edge:#0f0f0f;
+      --bar:rgba(255,255,255,.75);
+      --ring:#ffffff;
     }
-
     .ct-min{ display:grid; grid-template-rows:auto 1fr auto; gap:12px; min-height:60vh }
     .ct-min__bar{
       display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:10px 12px; border-radius:14px; background:var(--bar); backdrop-filter: blur(6px);
+      padding:10px 12px; border-radius:14px; background:var(--bar); backdrop-filter:blur(6px);
       border:2px solid var(--tile-edge);
     }
     body .ct-min{ background:var(--bg); padding:8px; border-radius:18px }
 
-    /* 타깃 힌트(세로 점) */
+    /* [CHANGE] 타깃(큰 원 한 개) */
     .ct-min__target{ display:flex; align-items:center; gap:8px }
-    .ct-dot{ width:18px; height:18px; border-radius:50%; border:2px solid var(--tile-edge); display:inline-block }
-    .ct-dot.ring{ box-shadow:0 0 0 3px var(--ring) inset }
+    .ct-target{
+      width:44px; height:44px; border-radius:50%;
+      border:3px solid var(--tile-edge);
+      box-shadow:0 0 0 4px var(--ring) inset;
+      display:inline-block;
+    }
 
     /* 스탯 */
     .ct-min__stats{ display:flex; gap:18px; align-items:center }
@@ -72,24 +95,34 @@
     /* 액션 */
     .ct-min__actions{ display:flex; align-items:center; gap:10px }
     .ctl{ padding:.4rem .6rem; border-radius:10px; border:2px solid var(--tile-edge); background:#fff; font-weight:700 }
-    .btn{ width:44px; height:44px; border-radius:12px; border:2px solid var(--tile-edge); background:#fff; font-size:1.1rem; font-weight:900; }
+    .btn{
+      height:44px; padding:0 12px;
+      border-radius:12px; border:2px solid var(--tile-edge);
+      background:#fff; font-size:1rem; font-weight:900; cursor:pointer;
+    }
     .btn.ghost{ background:transparent }
+    .btn.big{ height:48px; font-size:1.05rem; min-width:74px }
+    .btn.xl{ height:56px; font-size:1.1rem; min-width:120px }
+    .btn.link{ display:inline-flex; align-items:center; justify-content:center; text-decoration:none }
 
     /* 스테이지(큰 정사각형 타일) */
     .ct-min__stage{
       display:grid; place-content:center; gap:14px;
-      grid-auto-rows:minmax(90px, 16vh); grid-auto-columns:minmax(90px, 16vh);
+      grid-auto-rows:minmax(90px,16vh); grid-auto-columns:minmax(90px,16vh);
       justify-content:center;
     }
+    .ct-min__footer{ display:flex; justify-content:center; }
     .tile{
       border-radius:24px; border:4px solid var(--tile-edge);
       box-shadow:0 2px 0 var(--tile-edge), 0 6px 18px rgba(0,0,0,.12);
       transition:transform .06s ease-out; touch-action:manipulation;
     }
     .tile:active{ transform:scale(.96) }
-    @media (max-width: 420px){
-      .ct-min__stage{ gap:10px; grid-auto-rows:minmax(78px, 16vh); grid-auto-columns:minmax(78px, 16vh) }
-      .btn{ width:40px; height:40px }
+    @media (max-width:420px){
+      .ct-min__stage{ gap:10px; grid-auto-rows:minmax(78px,16vh); grid-auto-columns:minmax(78px,16vh) }
+      .btn{ height:42px }
+      .btn.xl{ height:52px }
+      .ct-target{ width:40px; height:40px }
     }
 
     /* 피드백 애니메이션 */
@@ -99,4 +132,17 @@
     @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
 
     .ct-min__msg{ min-height:1.2em; text-align:center; font-weight:800; color:var(--ink) }
+
+    /* [CHANGE] 종료 오버레이 */
+    .ct-end{
+      position:fixed; inset:0; display:grid; place-items:center;
+      background:rgba(0,0,0,.35); backdrop-filter:blur(2px);
+    }
+    .ct-end__card{
+      background:#fff; border:2px solid var(--tile-edge); border-radius:16px;
+      padding:20px; width:min(92vw,420px); text-align:center;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+    .ct-end__score{ font-size:1.1rem; line-height:1.6; }
+    .ct-end__actions{ display:flex; gap:10px; justify-content:center; margin-top:10px }
 </style>

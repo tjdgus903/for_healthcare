@@ -16,14 +16,24 @@ function vibrate(ms){ try{ navigator.vibrate?.(ms); }catch{} }
 export default {
   start(sessionId, hooks = {}) {
     const stage = document.getElementById('ctStage');
-    const dots  = Array.from(document.querySelectorAll('.ct-min .ct-dot')); // 타깃 힌트 점 5개
-    const elTime= document.getElementById('ctTime');
-    const elScore=document.getElementById('ctScore');
+    // [CHANGE] 한 개 타깃 원
+    const dotTarget = document.getElementById('ctTarget');
+
+    const elTime = document.getElementById('ctTime');
+    const elScore = document.getElementById('ctScore');
     const elMsg = document.getElementById('ctMsg');
     const selLv = document.getElementById('ctLevel');
-    const btnNone = document.getElementById('ctNone');
-    const btnPause= document.getElementById('ctPause');
-    const btnRestart=document.getElementById('ctRestart');
+
+    const btnNoneTop = document.getElementById('ctNone');
+    const btnNoneBottom = document.getElementById('ctNoneBottom'); // [CHANGE] 하단 큰 버튼
+    const btnPause = document.getElementById('ctPause');
+    const btnRestart = document.getElementById('ctRestart');
+
+    // [CHANGE] 종료 오버레이 요소
+    const endLayer = document.getElementById('ctEnd');
+    const endScore = document.getElementById('ctEndScore');
+    const endAcc = document.getElementById('ctEndAcc');
+    const btnPlayAgain = document.getElementById('ctPlayAgain');
 
     let paused=false, t0=Date.now(), raf=0;
     let score=0, total=0, correct=0;
@@ -41,9 +51,9 @@ export default {
       stage.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
     }
 
-    // 타겟 힌트(세로 점 색)
-    function paintTargetDots(colorCss){
-      dots.forEach(d=>{ d.style.background = colorCss; });
+    // [CHANGE] 타깃 원 색상 칠하기
+    function paintTarget(colorCss){
+      if (dotTarget) dotTarget.style.background = colorCss;
     }
 
     function setMsg(s){ elMsg.textContent=s||''; if(s) setTimeout(()=>elMsg.textContent='',900); }
@@ -63,7 +73,24 @@ export default {
       if(remain<=0){
         cancelAnimationFrame(raf);
         const acc = total? +(correct/total).toFixed(3):0;
-        hooks.onEnd?.({ score, accuracy: acc, meta:{ total, correct, palette:'GRB', absent:ABSENT_RATE, level }});
+
+        // [CHANGE] 게임 종료 시에만 서버 전송 (요약 데이터 1회)
+        const endedAt = new Date().toISOString();
+        const summary = {
+          score,
+          accuracy: acc,
+          endedAt,
+          total,
+          correct,
+          level
+        };
+        // 서버로 단 한 번 전송
+        postSummary(sessionId, summary).catch(()=>{ /* 전송 실패 무시(옵션) */ });
+
+        // 오버레이 표시
+        showEnd(summary);
+
+        hooks.onEnd?.(summary);
         return;
       }
       raf=requestAnimationFrame(tick);
@@ -74,7 +101,7 @@ export default {
       total++;
       target = pick(PALETTE);
       present = Math.random() > ABSENT_RATE;
-      paintTargetDots(target.css);
+      paintTarget(target.css);
 
       stage.innerHTML='';
       const n = side(level);
@@ -100,64 +127,85 @@ export default {
       });
     }
 
-    async function sendMetrics(items){
-      try{ await metrics(sessionId, items); }catch{}
-    }
-
-    async function onPick(chosenKey, el){
+    // [CHANGE] 진행 중 개별 메트릭 전송 제거 → 로컬 계산만
+    function onPick(chosenKey, el){
       if(paused) return;
-      const rt = Math.round(performance.now()-roundStart);
       const ok = (present && chosenKey===target.key);
       if(ok){ score+=10; correct++; el.classList.add('ok'); vibrate(20); }
       else  { el.classList.add('ng'); vibrate(50); }
-
-      sendMetrics([
-        { key:'reaction_ms', value:rt, unit:'ms' },
-        { key: ok?'tap_correct':'tap_wrong', value:1, extra:{ chosen:chosenKey, target:target.key, present, level } }
-      ]);
 
       updateScore();
       setTimeout(buildRound, 110);
     }
 
     // 없음(타깃이 실제 없을 때 정답)
-    btnNone.onclick = ()=>{
+    function onNone(){
       if(paused) return;
-      const rt = Math.round(performance.now()-roundStart);
       const ok = !present;
       if(ok){ score+=10; correct++; vibrate(20); } else vibrate(50);
-
-      sendMetrics([
-        { key:'reaction_ms', value:rt, unit:'ms' },
-        { key: ok?'tap_none_correct':'tap_none_wrong', value:1, extra:{ target:target.key, level } }
-      ]);
 
       updateScore();
       setMsg(ok?'정답':'오답');
       setTimeout(buildRound, 120);
-    };
+    }
+
+    btnNoneTop.onclick = onNone;
+    btnNoneBottom.onclick = onNone; // [CHANGE] 보조 버튼 동일 동작
 
     btnPause.onclick = ()=>{
       paused = !paused;
       btnPause.textContent = paused ? '▶' : '❙❙';
       stage.style.pointerEvents = paused ? 'none':'auto';
-      if(!paused) { // 재개 시 라운드 타이밍 초기화
-        roundStart = performance.now();
-      }
+      if(!paused){ roundStart = performance.now(); }
     };
 
     btnRestart.onclick = ()=>{
-      score=0; total=0; correct=0; paused=false;
-      btnPause.textContent='❙❙';
-      stage.style.pointerEvents='auto';
-      t0=Date.now();
-      updateScore(); buildRound();
+      restart();
     };
 
     selLv?.addEventListener('change', ()=>{
       level = selLv.value || 'NORMAL';
       applyGrid(); buildRound();
     });
+
+    // [CHANGE] 종료 오버레이 표시/재시작
+    function showEnd({score, accuracy}){
+      endScore.textContent = String(score);
+      endAcc.textContent = `${Math.round((accuracy||0)*100)}%`;
+      endLayer.hidden = false;
+    }
+    function hideEnd(){ endLayer.hidden = true; }
+    btnPlayAgain.onclick = ()=>{
+      hideEnd();
+      restart();
+    };
+
+    function restart(){
+      score=0; total=0; correct=0; paused=false;
+      btnPause.textContent='❙❙';
+      stage.style.pointerEvents='auto';
+      t0=Date.now();
+      hideEnd();
+      updateScore(); buildRound();
+      cancelAnimationFrame(raf);
+      raf=requestAnimationFrame(tick);
+    }
+
+    // [CHANGE] 종료 요약 전송 전용 함수
+    async function postSummary(sessionId, summary){
+      // metrics(sessionId, items) 형태 유지. 서버에서 summary만 저장하도록 구성.
+      // 예: [{ key:'summary', value:score, extra:{ ... } }]
+      const payload = [
+        { key:'summary', value: summary.score, extra: {
+            accuracy: summary.accuracy,
+            endedAt: summary.endedAt,
+            total: summary.total,
+            correct: summary.correct,
+            level: summary.level
+        } }
+      ];
+      await metrics(sessionId, payload);
+    }
 
     // 초기화
     applyGrid(); updateScore(); buildRound();
