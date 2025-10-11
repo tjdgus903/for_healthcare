@@ -35,8 +35,7 @@
 </div>
 <!-- 게임 로딩/세션 생성/종료 제어 -->
 <script type="module">
-    import { isAuthed, getToken } from '/js/app.esm.js';
-
+    import { isAuthed } from '/js/app.esm.js';
     import { start as startSession, end as endSession, safeEndOnLeave } from '/js/game-bridge.esm.js';
 
     // 진입 가드: 비로그인 → 로그인 페이지로
@@ -46,79 +45,125 @@
       location.replace('/login?next=' + encodeURIComponent(nextUrl));
     }
 
-  const $ = (id) => document.getElementById(id);
+    const $ = (id) => document.getElementById(id);
 
-  function gameModulePath(t) {
-    switch (t) {
-      case 'COLOR_TAP':       return '/js/games/color-tap.js';
-      case 'SEQUENCE_MEMORY': return '/js/games/sequence-memory.js';
-      case 'SHAPE_MATCH':     return '/js/games/shape-match.js';
-      default:                return null;
-    }
-  }
-
-  function gamePartialPath(t) {
-    switch (t) {
-      case 'COLOR_TAP':       return '/games/color-tap.html';
-      case 'SEQUENCE_MEMORY': return '/games/sequence-memory.html';
-      case 'SHAPE_MATCH':     return '/games/shape-match.html';
-      default:                return null;
-    }
-  }
-
-  async function loadPartial(url, host) {
-    if (!url) return;
-    const html = await fetch(url, { cache: 'no-cache' }).then(r => r.text());
-    host.innerHTML = html;
-  }
-
-async function boot() {
-  const type = $('gameTypeView').textContent.trim();
-  const jsPath = gameModulePath(type);
-  if (!jsPath) { alert('아직 구현되지 않은 게임입니다.'); location.href='/game'; return; }
-
-  // 1) (선택) 파셜 먼저 넣기
-  await loadPartial(gamePartialPath(type), document.getElementById('gameArea'));
-
-  // 2) 게임 모듈 로딩
-  const mod = await import(jsPath + '?v=1'); // 캐시 무효화용 ?v= 선택
-  const game = mod.default || mod[Object.keys(mod)[0]];
-  if (!game?.start) { alert('게임 모듈에 start가 없습니다.'); return; }
-
-  // 3) 세션 생성
-  const s = await startSession(type);
-  const sid = s.sessionId;
-  $('sessionView').textContent = sid;
-
-  // 4) 게임 시작
-  game.start(sid, {
-    onScore: (score, acc) => {
-      $('scoreView').textContent = String(score);
-      $('accView').textContent = `${Math.round((acc||0)*100)}%`;
-    },
-    onTime: (sec) => { $('timeView').textContent = `${sec}s`; },
-    onEnd: async (payload) => {
-      try {
-        const r = await endSession(sid, payload || {});
-        $('log').textContent = '종료 기록: ' + JSON.stringify(r, null, 2);
-      } finally {
-        sessionStorage.removeItem('sessionId');
+    function gameModulePath(t) {
+      switch (t) {
+        case 'COLOR_TAP':       return '/js/games/color-tap.js';
+        case 'SEQUENCE_MEMORY': return '/js/games/sequence-memory.js';
+        case 'SHAPE_MATCH':     return '/js/games/shape-match.js';
+        default:                return null;
       }
     }
-  });
 
-  // 종료/이탈 처리
-  document.getElementById('btnEnd').addEventListener('click', async () => {
-    try { await endSession(sid, {}); } finally {
-      sessionStorage.removeItem('sessionId');
-      location.href = '/game';
+    function gamePartialPath(t) {
+      switch (t) {
+        case 'COLOR_TAP':       return '/games/color-tap.html';
+        case 'SEQUENCE_MEMORY': return '/games/sequence-memory.html';
+        case 'SHAPE_MATCH':     return '/games/shape-match.html';
+        default:                return null;
+      }
     }
-  });
-  window.addEventListener('pagehide', () => safeEndOnLeave());
-}
 
-document.getElementById('btnStart')?.addEventListener('click', () => boot().catch(handleErr));
-function handleErr(e){ console.error(e); alert('게임 시작 중 오류: ' + e); location.href = '/game'; }
+    async function loadPartial(url, host) {
+      if (!url) return;
+      const html = await fetch(url, { cache: 'no-cache' }).then(r => r.text());
+      host.innerHTML = html;
+    }
+
+    // ---------------------------
+    // 초기: 준비 화면만 로드
+    // ---------------------------
+    let booted = false;       // 중복 시작 방지
+    let currentSid = null;    // 현재 세션ID
+
+    async function preloadUI() {
+      const type = $('gameTypeView').textContent.trim();
+      const partial = gamePartialPath(type);
+      if (!partial) {
+        alert('아직 구현되지 않은 게임입니다.');
+        location.href = '/game';
+        return;
+      }
+      // 페이지 진입 즉시 준비 화면 렌더
+      await loadPartial(partial, $('gameArea'));
+
+      // 준비 화면 상태값 뷰 업데이트 (보기 좋게)
+      $('timeView').textContent = '30s';
+      $('scoreView').textContent = '0';
+      $('accView').textContent = '0%';
+    }
+
+    // ---------------------------
+    // 실제 게임 시작(세션 생성 + 모듈 start)
+    // ---------------------------
+    async function boot() {
+      if (booted) return;  // 중복 클릭 방지
+      booted = true;
+
+      try {
+        const type = $('gameTypeView').textContent.trim();
+        const jsPath = gameModulePath(type);
+        if (!jsPath) { alert('아직 구현되지 않은 게임입니다.'); location.href='/game'; return; }
+
+        // 모듈 사전 로딩(파셜은 이미 로딩됨)
+        const mod = await import(jsPath + '?v=1');
+        const game = mod.default || mod[Object.keys(mod)[0]];
+        if (!game?.start) { throw new Error('게임 모듈에 start 함수가 없습니다.'); }
+
+        // 세션 생성
+        const s = await startSession(type);
+        const sid = s.sessionId;
+        currentSid = sid;
+        $('sessionView').textContent = sid;
+
+        // 게임 시작
+        game.start(sid, {
+          onScore: (score, acc) => {
+            $('scoreView').textContent = String(score);
+            $('accView').textContent = `${Math.round((acc||0)*100)}%`;
+          },
+          onTime: (sec) => { $('timeView').textContent = `${sec}s`; },
+          onEnd: async (payload) => {
+            try {
+              const r = await endSession(sid, payload || {});
+              $('log').textContent = '종료 기록: ' + JSON.stringify(r, null, 2);
+            } finally {
+              sessionStorage.removeItem('sessionId');
+              currentSid = null;
+              booted = false; // 다시 시작 가능
+            }
+          }
+        });
+
+      } catch (e) {
+        console.error(e);
+        alert('게임 시작 중 오류: ' + e);
+        location.href = '/game';
+      }
+    }
+
+    // ---------------------------
+    // 종료/이탈 처리
+    // ---------------------------
+    $('btnEnd')?.addEventListener('click', async () => {
+      try {
+        if (currentSid) await endSession(currentSid, {});
+      } finally {
+        sessionStorage.removeItem('sessionId');
+        currentSid = null;
+        location.href = '/game';
+      }
+    });
+    window.addEventListener('pagehide', () => safeEndOnLeave());
+
+    // ---------------------------
+    // 이벤트 바인딩
+    // ---------------------------
+    $('btnStart')?.addEventListener('click', () => boot());
+
+    // 페이지 진입 즉시 "준비 화면"만 렌더
+    document.addEventListener('DOMContentLoaded', preloadUI);
 </script>
 </body>
 </html>
