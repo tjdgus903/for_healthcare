@@ -1,7 +1,6 @@
 package com.healthcare.play.orgs
 
 import com.healthcare.play.domain.game.GameSessionRepository
-import com.healthcare.play.domain.game.GameType
 import com.healthcare.play.domain.game.SessionMetricRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
