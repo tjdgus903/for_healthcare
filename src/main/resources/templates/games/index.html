@@ -6,42 +6,42 @@
     <div id="content" th:fragment="content">
         <h1 class="h4 fw-bold mb-3">게임 선택</h1>
 
-        <section class="row g-3">
-            <div class="col-12 col-md-6">
-                <div class="card border-0 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between">
-                    <div>
-                        <h2 class="h5 fw-bold mb-1">컬러 탭</h2>
-                        <div class="text-muted">같은 색을 빠르고 정확하게 탭</div>
-                    </div>
-                    <a class="btn btn-primary btn-lg fw-bold"
-                       th:href="@{|/play?type=COLOR_TAP|}"
-                       data-play-link>시작</a>
+        <section class="game-list">
+            <!-- COLOR_TAP -->
+            <article class="game-item">
+                <img src="/images/games/color-tap.png" alt="컬러 탭" class="game-thumb">
+                <div class="game-info">
+                    <h2 class="game-title">컬러 탭</h2>
+                    <p class="game-desc">지시된 색을 빠르고 정확하게 탭하는 반응 속도 게임</p>
                 </div>
-            </div>
+                <a class="btn btn-primary btn-lg fw-bold"
+                   th:href="@{|/play?type=COLOR_TAP|}"
+                   data-play-link>시작</a>
+            </article>
 
-            <div class="col-12 col-md-6">
-                <div class="card border-0 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between">
-                    <div>
-                        <h2 class="h5 fw-bold mb-1">시퀀스 메모리</h2>
-                        <div class="text-muted">순서대로 따라 탭</div>
-                    </div>
-                    <a class="btn btn-primary btn-lg fw-bold"
-                       th:href="@{|/play?type=SEQUENCE_MEMORY|}"
-                       data-play-link>시작</a>
+            <!-- SEQUENCE_MEMORY -->
+            <article class="game-item">
+                <img src="/images/games/sequence-memory.png" alt="시퀀스 메모리" class="game-thumb">
+                <div class="game-info">
+                    <h2 class="game-title">시퀀스 메모리</h2>
+                    <p class="game-desc">제시된 순서를 기억하고 같은 순서로 탭</p>
                 </div>
-            </div>
+                <a class="btn btn-primary btn-lg fw-bold"
+                   th:href="@{|/play?type=SEQUENCE_MEMORY|}"
+                   data-play-link>시작</a>
+            </article>
 
-            <div class="col-12 col-md-6">
-                <div class="card border-0 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between">
-                    <div>
-                        <h2 class="h5 fw-bold mb-1">매칭 퍼즐</h2>
-                        <div class="text-muted">같은 그림을 맞춰요</div>
-                    </div>
-                    <a class="btn btn-primary btn-lg fw-bold"
-                       th:href="@{|/play?type=SHAPE_MATCH|}"
-                       data-play-link>시작</a>
+            <!-- SHAPE_MATCH -->
+            <article class="game-item">
+                <img src="/images/games/shape-match.png" alt="매칭 퍼즐" class="game-thumb">
+                <div class="game-info">
+                    <h2 class="game-title">매칭 퍼즐</h2>
+                    <p class="game-desc">같은 그림을 빠르게 찾아 매칭하는 퍼즐</p>
                 </div>
-            </div>
+                <a class="btn btn-primary btn-lg fw-bold"
+                   th:href="@{|/play?type=SHAPE_MATCH|}"
+                   data-play-link>시작</a>
+            </article>
         </section>
 
         <!-- (이전 데모용 섹션은 그대로 필요하면 유지) -->
@@ -68,5 +68,72 @@
       });
     })();
 </script>
+<style>
+    .game-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .game-item {
+      display: flex;
+      align-items: center;      /* 이미지·텍스트·버튼 세로 중앙 정렬 */
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 1rem 1.2rem;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .game-thumb {
+      width: 120px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .game-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .game-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .game-desc {
+      font-size: 0.9rem;
+      color: #666;
+      margin: 0;
+    }
+
+    .game-item .btn {
+      flex-shrink: 0;
+    }
+
+    /* 모바일에서 세로 정렬 */
+    @media (max-width: 576px) {
+      .game-item {
+        flex-direction: column;
+        text-align: center;
+      }
+      .game-thumb {
+        width: 80%;
+        max-width: 260px;
+        height: auto;
+      }
+      .game-item .btn {
+        margin-top: 0.5rem;
+      }
+    }
+</style>
+
 </body>
 </html>
