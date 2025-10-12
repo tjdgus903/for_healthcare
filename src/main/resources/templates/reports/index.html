@@ -1,18 +1,95 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head><title>리포트</title></head>
+<head>
+    <title>리포트</title>
+    <!-- Chart.js (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
 <body>
 <div th:replace="~{layout/base :: layout('리포트', ~{::content})}">
     <div id="content" th:fragment="content">
-        <section class="card border-0 shadow-sm p-3">
-            <div class="d-flex flex-wrap gap-2">
-                <button id="btnMyReport" class="btn btn-primary btn-lg fw-bold">내 리포트 불러오기</button>
-                <button id="btnExportZip" class="btn btn-outline-primary btn-lg fw-bold">데이터 내보내기</button>
+
+        <!-- 상단 컨트롤 -->
+        <section class="card border-0 shadow-sm p-3 mb-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <label for="selRange" class="fw-bold mb-0">기간</label>
+                <select id="selRange" class="form-select" style="width: 140px;">
+                    <option value="7">최근 7일</option>
+                    <option value="30" selected>최근 30일</option>
+                    <option value="90">최근 90일</option>
+                </select>
+
+                <button id="btnReload" class="btn btn-primary fw-bold">불러오기</button>
+                <button id="btnPrint" class="btn btn-outline-secondary">인쇄/저장(PDF)</button>
             </div>
-            <pre id="out" class="mt-2 mb-0"></pre>
+            <div class="small text-muted mt-2">로그인된 사용자 기준으로 집계됩니다.</div>
         </section>
+
+        <!-- KPI 타일 -->
+        <section class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm p-3 text-center">
+                    <div class="text-muted mb-1">총 세션 수</div>
+                    <div id="kpiSessions" class="h3 fw-bold mb-0">-</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm p-3 text-center">
+                    <div class="text-muted mb-1">총 플레이 시간</div>
+                    <div id="kpiDuration" class="h3 fw-bold mb-0">-</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm p-3 text-center">
+                    <div class="text-muted mb-1">평균 점수</div>
+                    <div id="kpiAvgScore" class="h3 fw-bold mb-0">-</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm p-3 text-center">
+                    <div class="text-muted mb-1">평균 정확도</div>
+                    <div id="kpiAvgAcc" class="h3 fw-bold mb-0">-</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 차트들 -->
+        <section class="row g-3 mt-1">
+            <div class="col-12 col-lg-6">
+                <div class="card border-0 shadow-sm p-3">
+                    <div class="fw-bold mb-2">게임별 세션 수</div>
+                    <canvas id="chSessions"></canvas>
+                </div>
+            </div>
+            <div class="col-12 col-lg-6">
+                <div class="card border-0 shadow-sm p-3">
+                    <div class="fw-bold mb-2">게임별 평균 점수</div>
+                    <canvas id="chAvgScore"></canvas>
+                </div>
+            </div>
+            <div class="col-12 col-lg-6">
+                <div class="card border-0 shadow-sm p-3">
+                    <div class="fw-bold mb-2">게임별 평균 정확도(%)</div>
+                    <canvas id="chAvgAcc"></canvas>
+                </div>
+            </div>
+            <div class="col-12 col-lg-6">
+                <div class="card border-0 shadow-sm p-3">
+                    <div class="fw-bold mb-2">게임별 플레이 시간 비중</div>
+                    <canvas id="chDuration"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="card border-0 shadow-sm p-3 mt-3">
+            <div class="fw-bold mb-2">원시 데이터</div>
+            <pre id="out" class="small mb-0" style="white-space:pre-wrap;word-break:break-word;"></pre>
+        </section>
+
     </div>
 </div>
-<script src="/js/reports.js"></script>
+
+<!-- 리포트 전용 스크립트 -->
+<script type="module" src="/js/reports.js"></script>
 </body>
 </html>

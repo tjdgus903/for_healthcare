@@ -37,14 +37,26 @@ async function req(path, opt = {}) {
   return body;
 }
 
-function get(p) { return req(p); }
-function post(p, data) {
+export function get(p) { return req(p); }
+export function post(p, data) {
   return req(p, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: data ? JSON.stringify(data) : null
   });
 }
+
+/*export async function downloadFile(path) {
+  const jwt = getToken();
+  const res = await fetch(API + path, { headers: jwt ? { Authorization: 'Bearer ' + jwt } : {} });
+  if (!res.ok) throw new Error(await res.text());
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = path.split('/').pop() || 'download.bin';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}*/
 
 // ====== 화면 조작 함수 ======
 function toggleTheme() {
