@@ -220,7 +220,9 @@ document.addEventListener('DOMContentLoaded', () => {
   bind('btnClearToken', clearToken);
 
   bind('btnAttendanceCheck', attendanceCheck);
-  bind('btnFetchCalendar', fetchCalendar);
+
+  // 수동 불러오기 버튼은 없으니 주석/삭제
+  // bind('btnFetchCalendar', fetchCalendar);
 
   bind('btnStartSession', startSession);
   bind('btnEndSession', endSession);
@@ -235,12 +237,57 @@ document.addEventListener('DOMContentLoaded', () => {
   bind('btnVerifyStub', verifyStub);
   bind('btnToggleTheme', toggleTheme);
 
-  // 최초 진입 시 현재 month로 달력 표시 (선택)
-  const monthEl = document.getElementById('month');
-  if (monthEl && monthEl.value) fetchCalendar();
+  // ---- 여기부터 달력 초기화/이벤트 ----
+  const monthEl = document.getElementById('month');   // ← 단 한 번만 선언
+  if (monthEl) {
+    // 초기값 보정 & 최초 1회 렌더
+    if (!monthEl.value) monthEl.value = fmtMonth(new Date());
+    fetchCalendar();
+
+    // 월 변경 시 자동 불러오기
+    monthEl.addEventListener('change', fetchCalendar);
+
+    // 화살표 이동
+    const prev = document.getElementById('btnMonthPrev');
+    const next = document.getElementById('btnMonthNext');
+    if (prev) prev.addEventListener('click', () => moveMonth(-1));
+    if (next) next.addEventListener('click', () => moveMonth(1));
+
+    // (옵션) Alt+←/→ 단축키
+    monthEl.addEventListener('keydown', (e) => {
+      if (e.altKey && e.key === 'ArrowLeft')  { e.preventDefault(); moveMonth(-1); }
+      if (e.altKey && e.key === 'ArrowRight') { e.preventDefault(); moveMonth(1);  }
+    });
+  }
 });
 
 if (typeof window !== 'undefined') {
   window.doLogin = doLogin;
   window.logout = logout;
+}
+
+// ====== month 유틸 ======
+function fmtMonth(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+function parseMonthStr(yyyyMm){
+  const [y,m] = (yyyyMm||'').split('-').map(Number);
+  if(!y || !m) return null;
+  return new Date(y, m-1, 1);
+}
+function shiftMonthStr(yyyyMm, delta){ // delta: -1 or +1
+  const d = parseMonthStr(yyyyMm) || new Date();
+  d.setMonth(d.getMonth() + delta);
+  return fmtMonth(d);
+}
+
+async function setMonthAndFetch(v){
+  const monthEl = document.getElementById('month');
+  if(!monthEl) return;
+  monthEl.value = v;
+  await fetchCalendar();
+}
+async function moveMonth(delta){
+  const monthEl = document.getElementById('month');
+  const cur = (monthEl && monthEl.value) ? monthEl.value : fmtMonth(new Date());
+  const next = shiftMonthStr(cur, delta);
+  await setMonthAndFetch(next);
 }

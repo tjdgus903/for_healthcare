@@ -7,14 +7,24 @@
         <section class="card border-0 shadow-sm p-3">
             <div class="d-flex flex-wrap align-items-center gap-2">
                 <button id="btnAttendanceCheck" class="btn btn-primary btn-lg fw-bold">오늘 출석 체크</button>
-                <label for="month" class="fw-bold ms-1">월 선택</label>
-                <input id="month" type="month" class="form-control" style="max-width:220px" value="2025-10"/>
-                <button id="btnFetchCalendar" class="btn btn-outline-primary fw-bold">달력 불러오기</button>
+
+                <label for="month" class="fw-bold ms-1 mb-0">월 선택</label>
+
+                <!-- 이전/다음 화살표 -->
+                <div class="d-flex align-items-center gap-1">
+                    <button id="btnMonthPrev" class="btn btn-outline-secondary" type="button" title="이전 달">◀</button>
+                    <input id="month" type="month" class="form-control" style="max-width:220px" value="2025-10"/>
+                    <button id="btnMonthNext" class="btn btn-outline-secondary" type="button" title="다음 달">▶</button>
+                </div>
+
+                <!-- 기존 불러오기 버튼은 주석처리 또는 삭제 -->
+                <!-- <button id="btnFetchCalendar" class="btn btn-outline-primary fw-bold">달력 불러오기</button> -->
             </div>
             <div id="calendar" class="mt-3"></div>
             <pre id="out" class="mt-2 mb-0"></pre>
         </section>
     </div>
 </div>
+<script type="module" src="/js/frontend.esm.js"></script>
 </body>
 </html>
