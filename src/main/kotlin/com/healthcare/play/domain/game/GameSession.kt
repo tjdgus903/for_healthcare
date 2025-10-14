@@ -42,6 +42,10 @@ class GameSession(
 
     /** 세션 요약/설정/난이도 등 JSON */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "game_meta", columnDefinition = "jsonb", nullable = false)
-    var meta: String? = null
+    @Column(name = "game_meta", columnDefinition = "jsonb")
+    var meta: String? = null,
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "member_ids", columnDefinition = "uuid[]")
+    var memberIds: Array<UUID>? = null
 )

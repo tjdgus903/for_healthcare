@@ -18,7 +18,25 @@ data class MyReportResponse(
     val generatedAt: Instant,
     val rangeDays: Int,
     val perGame: List<GameAgg>,
-    val totals: Totals
+    val totals: Totals,
+    val byStringMeta: Map<String, List<MetaStringRow>>,  // "level" → [{gameType, metaVal, sessions, ...}]
+    val byNumericMeta: Map<String, List<MetaNumericRow>>  // "total" → [{gameType, avgValue, ...}]
+)
+
+data class MetaStringRow(
+    val gameType: String,
+    val metaVal: String,
+    val sessions: Long,
+    val avgScore: Double,
+    val avgAccuracy: Double,
+    val sumDurationSec: Long
+)
+
+data class MetaNumericRow(
+    val gameType: String,
+    val avgValue: Double,
+    val minValue: Double,
+    val maxValue: Double
 )
 
 data class Totals(

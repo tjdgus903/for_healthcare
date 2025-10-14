@@ -75,6 +75,79 @@ interface GameSessionRepository : JpaRepository<GameSession, UUID> {
         @Param("to") to: OffsetDateTime,
     ): List<GameAggView>
 
+    interface MetaStringAggView {
+        fun getGameType(): String
+        fun getMetaVal(): String
+        fun getSessions(): Long
+        fun getAvgScore(): Double
+        fun getAvgAccuracy(): Double
+        fun getSumDurationSec(): Long
+    }
+
+    @Query(
+        value =
+        """
+          select
+            g.type                                  as gameType,
+            coalesce(gs.game_meta->>:key, 'UNKNOWN') as metaVal,
+            count(gs.id)                             as sessions,
+            coalesce(avg(gs.score::double precision), 0)  as avgScore,
+            coalesce(avg(gs.accuracy::double precision),0)as avgAccuracy,
+            coalesce(sum(coalesce(gs.duration_sec,0)),0)  as sumDurationSec
+          from game_session gs
+          join game g on g.id = gs.game_id
+          where gs.user_id = :uid
+            and gs.started_at between :from and :to
+            and gs.ended_at is not null
+            and gs.score is not null
+            and gs.accuracy is not null
+            and jsonb_exists(gs.game_meta, :key)
+          group by g.type, metaVal
+          order by g.type, metaVal
+        """,
+        nativeQuery = true
+    )
+    fun aggregateByMetaString(
+        @Param("uid") userId: UUID,
+        @Param("from") from: OffsetDateTime,
+        @Param("to") to: OffsetDateTime,
+        @Param("key") key: String,                // e.g. "level", "mode", "palette"
+        // @Param("gameType") gameType: String?   // 옵션: 특정 게임만
+    ): List<MetaStringAggView>
+
+    interface MetaNumericAggView {
+        fun getGameType(): String
+        fun getAvgValue(): Double
+        fun getMinValue(): Double
+        fun getMaxValue(): Double
+    }
+
+    @Query(
+        value =
+        """
+          select
+            g.type as gameType,
+            coalesce(avg((gs.game_meta->>:key)::numeric),0) as avgValue,
+            coalesce(min((gs.game_meta->>:key)::numeric),0) as minValue,
+            coalesce(max((gs.game_meta->>:key)::numeric),0) as maxValue
+          from game_session gs
+          join game g on g.id = gs.game_id
+          where gs.user_id = :uid
+            and gs.started_at between :from and :to
+            and gs.ended_at is not null
+            and jsonb_exists(gs.game_meta, :key)
+          group by g.type
+          order by g.type
+        """,
+        nativeQuery = true
+    )
+    fun aggregateByMetaNumeric(
+        @Param("uid") userId: UUID,
+        @Param("from") from: OffsetDateTime,
+        @Param("to") to: OffsetDateTime,
+        @Param("key") key: String  // e.g. "total", "correct", "reaction_ms"
+    ): List<MetaNumericAggView>
+
     @Query(
         """
           select

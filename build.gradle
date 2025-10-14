@@ -10,13 +10,16 @@ group = 'com.neurocare'
 version = '0.0.1-SNAPSHOT'
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
+    toolchain { languageVersion = JavaLanguageVersion.of(17) }
 }
 
-repositories {
-    mavenCentral()
+repositories { mavenCentral() }
+
+/** ✅ 전역 exclude는 최상위에서! (dependencies 바깥) */
+configurations.all {
+    exclude group: 'com.vladmihalcea', module: 'hibernate-types-60'
+    exclude group: 'com.vladmihalcea', module: 'hibernate-types-55'
+    exclude group: 'com.vladmihalcea', module: 'hibernate-types-52'
 }
 
 dependencies {
@@ -35,14 +38,12 @@ dependencies {
     runtimeOnly  'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly  'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
-    /** flyway v10.10.0 에서 postgresql 17.4 를 미지원 */
     implementation "org.flywaydb:flyway-core:10.17.0"
     implementation "org.flywaydb:flyway-database-postgresql:10.17.0"
 
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
-
-    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
     implementation('org.jfree:jfreechart:1.5.4') {
         exclude group: 'org.jogamp.jogl', module: 'jogl-all'
@@ -57,23 +58,19 @@ dependencies {
     testImplementation 'org.testcontainers:postgresql'
 }
 
-tasks.test {
-    useJUnitPlatform()
-}
+tasks.test { useJUnitPlatform() }
 
-/** Kotlin도 JVM 17로 명시(권장) */
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
     kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs += ["-Xjsr305=strict"]
+        jvmTarget = '17'
+        freeCompilerArgs += ['-Xjsr305=strict']
     }
 }
 
-/** 메인 클래스 설정 */
+/** 메인 클래스 */
 springBoot {
     mainClass = 'com.healthcare.play.HealthcareApplicationKt'
 }
-
 tasks.named('bootRun') {
     mainClass.set('com.healthcare.play.HealthcareApplicationKt')
 }
