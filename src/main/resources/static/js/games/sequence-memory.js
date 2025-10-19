@@ -1,157 +1,191 @@
+// /js/games/sequence-memory.js
 import { metrics } from '/js/game-bridge.esm.js';
 
-// 5색 팔레트 (난이도에 따라 앞에서 N개만 사용)
 const ALL_COLORS = [
-  { key:'green',  cls:'c-green'  },
-  { key:'red',    cls:'c-red'    },
-  { key:'blue',   cls:'c-blue'   },
-  { key:'yellow', cls:'c-yellow' },
-  { key:'purple', cls:'c-purple' },
+  { key: 'blue',   cls: 'c-blue'   },
+  { key: 'green',  cls: 'c-green'  },
+  { key: 'yellow', cls: 'c-yellow' },
+  { key: 'red',    cls: 'c-red'    },
+  { key: 'purple', cls: 'c-purple' },
 ];
 
-const rnd = (n) => Math.floor(Math.random() * n);
-const choice = (arr) => arr[rnd(arr.length)];
-const wait = (ms) => new Promise(r=>setTimeout(r,ms));
+const rnd    = (n) => Math.floor(Math.random() * n);
+const wait   = (ms) => new Promise(r => setTimeout(r, ms));
+const nowms  = () => (performance?.now?.() ?? Date.now());
 
-const SHOW_MS = 650;
-const GAP_MS  = 200;
+const SHOW_MS = 520;
+const GAP_MS  = 140;
 
 export default {
   start(sessionId, hooks = {}) {
-    const $ = (id) => document.getElementById(id);
-    // HUD
-    const roundView = $('smemRound'), lenView = $('smemLen'),
-          scoreView = $('smemScore'), timeView = $('smemTime');
-    const btnStart = $('smemStart'), btnRestart = $('smemRestart'), btnPause = $('smemPause');
+    // 바인딩
+    const $  = (id) => document.getElementById(id);
+    const qs = (sel)=> document.querySelector(sel);
 
-    // Controls
-    const selColors  = $('smemColors');   // 3~5
-    const selLimit   = $('smemLimit');    // 45/60/90/120
-    const selReward  = $('smemReward');   // ×8/×10/×12
-    const selPenalty = $('smemPenalty');  // -3/-5/-8
+    const roundView = $('round');
+    const lenView   = $('len');
+    const scoreView = $('scoreView');   // play.html 상단 HUD
+    const timeView  = $('timeView');    // play.html 상단 HUD
+    const statusEl  = $('statusText');
 
-    // Stage
-    const beads = $('smemBeads');
-    const msg   = $('smemMsg');
-    const padsHost = document.querySelector('.smem-pads');
+    const btnStart   = $('btnStart');   // play.html 상단 버튼
+    const btnRestart = $('btnRestart'); // 파셜 버튼
+    const btnPause   = $('btnPause');   // 파셜 버튼
+
+    const selColors  = $('colors');
+    const selLimit   = $('limit');
+    const selReward  = $('reward');
+    const selPenalty = $('penalty');
+
+    const beads    = $('beads');
+    const padsHost = $('pads');
+
+    // 필수 노드 체크
+    const need = [roundView, lenView, scoreView, timeView, statusEl, btnStart, btnRestart, btnPause, selColors, selLimit, selReward, selPenalty, beads, padsHost];
+    if (need.some(n => !n)) {
+      console.error('[SEQUENCE] 필수 노드가 없습니다.', { roundView, lenView, scoreView, timeView, statusEl, btnStart, btnRestart, btnPause, selColors, selLimit, selReward, selPenalty, beads, padsHost });
+      statusEl.textContent = '구성 요소 누락으로 실행할 수 없습니다.';
+      return;
+    }
 
     // 상태
-    let COLORS = ALL_COLORS.slice(0, Number(selColors.value));
-    let ttlSec = Number(selLimit.value);
-    let rewardBase = Number(selReward.value);
-    let penalty = Number(selPenalty.value);
+    let COLORS     = ALL_COLORS.slice(0, Number(selColors.value || 4));
+    let ttlSec     = Number(selLimit.value || 60);
+    let rewardBase = Number(selReward.value || 10);
+    let penalty    = Number(selPenalty.value || 5);
 
-    let startedAt = 0, timerId = 0, paused = false, playing = false;
-    let score = 0, round = 1, seq = [], input = [];
+    let startedAt = 0;
+    let rafId     = 0;
+    let paused    = false;
+    let playing   = false;   // 시퀀스 재생 중
+    let accepting = false;   // 사용자 입력 허용
+
+    let score = 0;
+    let round = 1;
+    let seq   = [];
+    let step  = 0;
     let lastStepAt = 0;
 
-    // 패드 렌더
-    function renderPads() {
-      padsHost.innerHTML = '';
-      COLORS.forEach(c => {
+    // 유틸
+    const setMsg = (t) => { statusEl.textContent = t; };
+    const setPadsDisabled = (v) => padsHost.querySelectorAll('.pad').forEach(p => p.disabled = !!v);
+
+    const flashPad = (btn) => {
+      if (!btn) return;
+      const old = btn.style.filter;
+      btn.style.filter = 'brightness(1.25) saturate(1.15)';
+      setTimeout(() => (btn.style.filter = old), 200);
+    };
+
+    // 렌더
+    const labels = ['A','B','C','D','E'];
+
+    function setPadsColumns(){
+      const cols = Math.min(COLORS.length, 5);
+      padsHost.style.display='grid';
+      padsHost.style.gridTemplateColumns = `repeat(${cols}, minmax(120px, 1fr))`;
+      padsHost.style.gap = '18px';
+      padsHost.style.justifyContent = 'center';
+    }
+
+    function renderPads(){
+      padsHost.innerHTML='';
+      setPadsColumns();
+      COLORS.forEach((c,i)=>{
         const b = document.createElement('button');
+        b.type='button';
         b.className = `pad ${c.cls}`;
         b.dataset.color = c.key;
         b.setAttribute('aria-label', c.key);
-        b.addEventListener('click', () => handlePad(c.key));
+        b.innerHTML = `<span class="lbl">${labels[i] ?? ''}</span>`;
+        b.addEventListener('click', ()=> onPress(c.key, b));
         padsHost.appendChild(b);
       });
     }
 
-    function syncSettings() {
-      COLORS = ALL_COLORS.slice(0, Number(selColors.value));
-      ttlSec = Number(selLimit.value);
-      rewardBase = Number(selReward.value);
-      penalty = Number(selPenalty.value);
-    }
-
-    [selColors, selLimit, selReward, selPenalty].forEach(el => {
-      el.addEventListener('change', () => {
-        const remain = Math.max(0, ttlSec - Math.floor((Date.now() - startedAt)/1000));
-        syncSettings();
-        renderPads();
-        // 남은 시간 표시 보정(게임 중에도 헤더 숫자만 반영)
-        if (startedAt) timeView.textContent = remain + 's';
-      });
-    });
-
-    // 기본 UI
-    function resetUI() {
-      score = 0; round = 1; seq = []; input = [];
-      paused = false; playing = false;
-      roundView.textContent = '1';
-      lenView.textContent = '1';
-      scoreView.textContent = '0';
-      msg.textContent = '시작을 누르면 시퀀스를 봅니다.';
-      beads.innerHTML = '';
-      renderPads();
-    }
-    resetUI();
-
-    function renderBeads(n) {
-      beads.innerHTML = '';
+    function renderBeads(n){
+      beads.innerHTML='';
       for (let i=0;i<n;i++){
-        const d = document.createElement('div');
-        d.className = 'bead';
+        const d=document.createElement('div');
+        d.className='bead';
         beads.appendChild(d);
       }
     }
 
-    async function playSequence() {
-      playing = true;
-      msg.textContent = '시퀀스를 잘 보세요…';
-      renderBeads(seq.length);
-
-      for (let i=0;i<seq.length;i++){
-        if (paused) { i--; await wait(120); continue; }
-
-        const bead = beads.children[i];
-        bead.classList.add('on');
-
-        const colorKey = seq[i];
-        const pad = padsHost.querySelector(`[data-color="${colorKey}"]`);
-        pad.classList.add('flash');
-
-        // 지표: extra를 '객체'로 보냅니다 (문자열 X)
-        metrics(sessionId, [
-          { key:'seq_show', value:i+1, unit:'step', extra: { color: colorKey, round } }
-        ]).catch(()=>{});
-
-        await wait(SHOW_MS);
-        bead.classList.remove('on');
-        pad.classList.remove('flash');
-        await wait(GAP_MS);
-      }
-
-      playing = false;
-      input = [];
-      msg.textContent = '이제 순서대로 눌러보세요!';
-      lastStepAt = performance.now();
+    function syncSettings() {
+      COLORS     = ALL_COLORS.slice(0, Number(selColors.value || COLORS.length));
+      ttlSec     = Number(selLimit.value   || ttlSec);
+      rewardBase = Number(selReward.value  || rewardBase);
+      penalty    = Number(selPenalty.value || penalty);
+      renderPads();
     }
 
-    function extendSeq() {
-      const colorKey = choice(COLORS).key;
-      seq.push(colorKey);
+    // 게임 로직
+    function resetUI(){
+      score=0; round=1; seq=[]; step=0;
+      paused=false; playing=false; accepting=false;
+      roundView.textContent='1';
+      lenView.textContent='1';
+      scoreView.textContent='0';
+      timeView.textContent=`${ttlSec}s`;
+      setMsg('시작을 누르면 시퀀스가 재생됩니다.');
+      beads.innerHTML='';
+      renderPads();
+      setPadsDisabled(true);
+    }
+
+    function extendSeq(){
+      const next = COLORS[rnd(COLORS.length)].key;
+      seq.push(next);
       lenView.textContent = String(seq.length);
     }
 
-    function handlePad(colorKey) {
-      if (playing || paused || !startedAt) return;
+    async function playSequence(){
+      playing=true; accepting=false; setPadsDisabled(true);
+      setMsg('시퀀스를 잘 보세요…');
+      renderBeads(seq.length);
 
-      const need = seq[input.length];
-      const rt = Math.round(performance.now() - lastStepAt);
-      lastStepAt = performance.now();
+      for (let i=0;i<seq.length;i++){
+        while (paused) { await wait(100); }
+        const bead = beads.children[i];
+        bead?.classList.add('on');
+
+        const key = seq[i];
+        const btn = padsHost.querySelector(`[data-color="${key}"]`);
+        flashPad(btn);
+
+        metrics(sessionId, [
+          { key:'seq_show', value:i+1, unit:'step', extra:{ color:key, round } }
+        ]).catch(()=>{});
+
+        await wait(SHOW_MS);
+        bead?.classList.remove('on');
+        await wait(GAP_MS);
+      }
+
+      playing=false; accepting=true; setPadsDisabled(false);
+      setMsg('이제 순서대로 눌러보세요!');
+      step=0; lastStepAt = nowms();
+    }
+
+    function onPress(colorKey, btn){
+      if (!accepting || paused || !startedAt) return;
+
+      flashPad(btn);
+
+      const need = seq[step];
+      const rt = Math.round(nowms() - lastStepAt);
+      lastStepAt = nowms();
 
       const ok = (colorKey === need);
       metrics(sessionId, [
         { key:'reaction_ms', value:rt, unit:'ms' },
-        { key: ok ? 'seq_step_ok' : 'seq_step_ng', value:1, extra: { step: input.length+1, choose: colorKey, need, round } }
+        { key: ok ? 'seq_step_ok' : 'seq_step_ng', value:1, extra:{ step:step+1, choose:colorKey, need, round } }
       ]).catch(()=>{});
 
-      if (ok) {
-        input.push(colorKey);
-        if (input.length === seq.length) {
-          // 라운드 성공: 길이 × 가점
+      if (ok){
+        step++;
+        if (step >= seq.length){
           score += rewardBase * seq.length;
           scoreView.textContent = String(score);
           hooks.onScore?.(score, 1);
@@ -164,51 +198,79 @@ export default {
       } else {
         score = Math.max(0, score - penalty);
         scoreView.textContent = String(score);
-        msg.textContent = '틀렸어요! 같은 시퀀스를 다시 시도합니다.';
-        padsHost.classList.add('shake'); setTimeout(()=>padsHost.classList.remove('shake'), 250);
+        setMsg('틀렸어요! 같은 시퀀스를 다시 시도합니다.');
+        padsHost.classList.remove('shake'); void padsHost.offsetWidth; padsHost.classList.add('shake');
         playSequence();
       }
     }
 
-    function endGame(byTimer=false) {
-      cancelAnimationFrame(timerId);
-      const acc = 1; // 누적 정답률 대신 라운드 성공 모델 → 1로 보고
-      hooks.onEnd?.({ score, accuracy: acc, meta: {
-        colors: COLORS.map(c=>c.key), seqLen: seq.length, round, byTimer, rewardBase, penalty, limitSec: ttlSec
-      }});
+    function remainSec(){
+      const gone = Math.floor((Date.now() - startedAt)/1000);
+      return Math.max(0, ttlSec - gone);
     }
 
-    function tick() {
-      if (paused) return;
-      const remain = Math.max(0, ttlSec - Math.floor((Date.now() - startedAt)/1000));
-      timeView.textContent = remain + 's';
-      hooks.onTime?.(remain);
-      if (remain <= 0) endGame(true);
-      else timerId = requestAnimationFrame(tick);
+    function endGame(byTimer=false){
+      cancelAnimationFrame(rafId);
+      accepting=false; playing=false; setPadsDisabled(true);
+      hooks.onEnd?.({
+        score,
+        accuracy: 1,
+        meta:{
+          colors: COLORS.map(c=>c.key),
+          seqLen: seq.length,
+          round,
+          byTimer,
+          rewardBase,
+          penalty,
+          limitSec: ttlSec
+        }
+      });
     }
 
-    // 버튼들
-    btnStart.onclick = async () => {
+    function tick(){
+      if (!startedAt) return;
+      if (paused){ rafId = requestAnimationFrame(tick); return; }
+      const r = remainSec();
+      timeView.textContent = `${r}s`;
+      hooks.onTime?.(r);
+      if (r <= 0){
+        setMsg('시간 종료! 다시를 눌러 재시작하세요.');
+        endGame(true);
+      } else {
+        rafId = requestAnimationFrame(tick);
+      }
+    }
+
+    // 이벤트
+    [selColors, selLimit, selReward, selPenalty].forEach(el=>{
+      el.addEventListener('change', ()=>{
+        const r = startedAt ? remainSec() : ttlSec;
+        syncSettings();
+        if (startedAt) timeView.textContent = `${r}s`;
+      });
+    });
+
+    btnStart.addEventListener('click', async ()=>{
       syncSettings();
       resetUI();
       startedAt = Date.now();
-      timeView.textContent = ttlSec + 's';
+      timeView.textContent = `${ttlSec}s`;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(tick);
       extendSeq();
-      cancelAnimationFrame(timerId);
-      timerId = requestAnimationFrame(tick);
       await playSequence();
-    };
+    });
 
-    btnRestart.onclick = () => btnStart.click();
+    btnRestart.addEventListener('click', ()=> btnStart.click());
 
-    btnPause.onclick = () => {
+    btnPause.addEventListener('click', ()=>{
       if (!startedAt) return;
       paused = !paused;
-      btnPause.textContent = paused ? '계속' : '일시정지';
-      if (!paused) {
-        lastStepAt = performance.now();
-        timerId = requestAnimationFrame(tick);
-      }
-    };
+      btnPause.textContent = paused ? '재개' : '일시정지';
+      if (!paused) lastStepAt = nowms();
+    });
+
+    // 초기 세팅
+    resetUI();
   }
 };

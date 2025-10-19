@@ -1,107 +1,83 @@
-<!-- 시퀀스 메모리 : 풀페이지 스타일 파셜 -->
-<div class="smem-root">
-
-    <!-- 상단 HUD(헤더) : 컨트롤 몰아넣기 -->
-    <header class="smem-bar">
-        <div class="bar-left">
-            <div class="badge"><span>라운드</span><b id="smemRound">1</b></div>
-            <div class="badge"><span>길이</span><b id="smemLen">1</b></div>
-            <div class="badge"><span>점수</span><b id="smemScore">0</b></div>
-            <div class="badge"><span>시간</span><b id="smemTime">60s</b></div>
+<!-- /games/sequence-memory.html -->
+<section class="smem card border-0 p-2">
+    <!-- 가로형 툴바: 다시/일시정지 + 옵션 -->
+    <div class="smem-toolbar d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+        <div class="d-flex gap-2">
+            <button id="btnRestart" class="btn btn-outline-secondary" type="button">다시</button>
+            <button id="btnPause" class="btn btn-outline-dark" type="button">일시정지</button>
         </div>
-
-        <div class="bar-center">
-            <button id="smemStart"   class="btn primary">시작</button>
-            <button id="smemRestart" class="btn">다시</button>
-            <button id="smemPause"   class="btn">일시정지</button>
-        </div>
-
-        <div class="bar-right">
-            <label class="ctl">
-                색상
-                <select id="smemColors">
-                    <option value="3" selected>3개</option>
-                    <option value="4">4개</option>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <label class="form-label m-0">색상
+                <select id="colors" class="form-select form-select-sm d-inline-block" style="width:80px">
+                    <option value="3">3개</option>
+                    <option value="4" selected>4개</option>
                     <option value="5">5개</option>
                 </select>
             </label>
-            <label class="ctl">
-                제한
-                <select id="smemLimit">
+            <label class="form-label m-0">제한
+                <select id="limit" class="form-select form-select-sm d-inline-block" style="width:90px">
                     <option value="45">45s</option>
                     <option value="60" selected>60s</option>
                     <option value="90">90s</option>
                     <option value="120">120s</option>
                 </select>
             </label>
-            <label class="ctl">
-                가점
-                <select id="smemReward">
+            <label class="form-label m-0">가점
+                <select id="reward" class="form-select form-select-sm d-inline-block" style="width:90px">
                     <option value="8">×8</option>
                     <option value="10" selected>×10</option>
                     <option value="12">×12</option>
                 </select>
             </label>
-            <label class="ctl">
-                감점
-                <select id="smemPenalty">
+            <label class="form-label m-0">감점
+                <select id="penalty" class="form-select form-select-sm d-inline-block" style="width:90px">
                     <option value="3">-3</option>
                     <option value="5" selected>-5</option>
                     <option value="8">-8</option>
                 </select>
             </label>
+            <span class="badge text-bg-light border fw-semibold">라운드 <span id="round">1</span></span>
+            <span class="badge text-bg-light border fw-semibold">길이 <span id="len">1</span></span>
         </div>
-    </header>
+    </div>
 
-    <!-- 메인 영역 : 위 재생(점), 아래 큰 패드 -->
-    <main class="smem-stage">
-        <section class="smem-seq" aria-label="시퀀스 재생">
-            <div id="smemBeads" class="beads"></div>
-            <div id="smemMsg" class="msg" role="status" aria-live="polite">시작을 누르면 시퀀스를 봅니다.</div>
-        </section>
+    <!-- 진행/상태 -->
+    <div class="smem-status small text-muted mb-2" id="statusText">시작을 누르면 시퀀스가 재생됩니다.</div>
 
-        <section class="smem-pads" role="group" aria-label="색상 패드">
-            <!-- JS에서 색상 개수에 맞춰 생성 -->
-        </section>
-    </main>
-
-</div>
+    <!-- 재생 점 + 패드 -->
+    <div class="smem-stage">
+        <div id="beads" class="smem-beads" aria-hidden="true"></div>
+        <div id="pads" class="smem-pads" role="group" aria-label="색상 패드"></div>
+    </div>
+</section>
 
 <style>
-    .smem-root{display:flex;flex-direction:column;min-height:70vh;gap:12px}
-    .smem-bar{
-      position:sticky; top:0; z-index:1;
-      display:flex; align-items:center; justify-content:space-between; gap:8px;
-      padding:8px 10px; background:#fff; border:2px solid #000; border-radius:14px;
+    /* 레이아웃 */
+    .smem-stage{display:grid;gap:16px;min-height:220px}
+    .smem-beads{display:flex;gap:8px;justify-content:center;min-height:22px}
+    .smem-beads .bead{width:16px;height:16px;border-radius:50%;border:2px solid #111;opacity:.25;transition:opacity .15s, transform .15s}
+    .smem-beads .bead.on{opacity:1;transform:scale(1.2)}
+    .smem-pads{display:grid;gap:18px;justify-content:center}
+
+    /* 패드(가로 한 줄) */
+    .smem-pads .pad{
+      position:relative; min-width:120px; aspect-ratio:1/1;
+      border-radius:18px; border:3px solid #111;
+      box-shadow:0 4px 0 #111; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:900; font-size:20px; color:#111; user-select:none;
     }
-    .bar-left,.bar-center,.bar-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .badge{display:flex;gap:6px;align-items:center;background:#f5f5f5;border:2px solid #000;border-radius:10px;padding:.35rem .6rem;font-weight:800}
-    .badge span{color:#666;font-weight:700}
-    .btn{padding:.55rem .9rem;border-radius:10px;border:2px solid #000;background:#fff;font-weight:900}
-    .btn.primary{background:#1e88e5;color:#fff}
-    .ctl{display:flex;align-items:center;gap:6px;font-weight:700}
-    .ctl select{border:2px solid #000;border-radius:10px;padding:.35rem .5rem}
+    .smem-pads .pad:active{transform:translateY(2px)}
+    .smem-pads .pad .lbl{position:absolute; bottom:8px; right:10px; opacity:.85; font-size:14px}
 
-    .smem-stage{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px}
-    .smem-seq{display:flex;flex-direction:column;align-items:center;gap:10px;min-height:90px}
-    .beads{display:flex;gap:10px;align-items:center;justify-content:center}
-    .bead{width:18px;height:18px;border-radius:50%;border:2px solid #000;opacity:.2;transition:opacity .2s, transform .2s}
-    .bead.on{opacity:1;transform:scale(1.25)}
-    .msg{min-height:1.2em;font-weight:800;color:#444;text-align:center}
+    /* 색상 (색약친화 팔레트) */
+    .c-blue   { background:#42a5f5; }
+    .c-green  { background:#8bc34a; }
+    .c-yellow { background:#f6c445; }
+    .c-red    { background:#ef5350; }
+    .c-purple { background:#ab47bc; }
 
-    .smem-pads{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:4px}
-    .pad{width:120px;height:120px;border-radius:28px;border:3px solid #000;box-shadow:0 2px 4px rgba(0,0,0,.25)}
-    .pad:active{transform:scale(.98)}
-    @media (max-width:520px){ .pad{width:100px;height:100px} }
-
-    /* 컬러 팔레트 */
-    .c-green{background:#8bc34a}
-    .c-red{background:#ef5350}
-    .c-blue{background:#42a5f5}
-    .c-yellow{background:#f6c445}
-    .c-purple{background:#ab47bc}
-
-    /* 피드백 */
+    /* 오답 피드백 */
     .shake{animation:shake .25s linear}
-    @keyframes shake {0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+    @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
 </style>
